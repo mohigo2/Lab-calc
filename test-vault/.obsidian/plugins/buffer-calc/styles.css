@@ -1,0 +1,463 @@
+/* Buffer Calc Plugin Styles */
+
+.buffer-calc-container {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 16px;
+    margin: 8px 0;
+    background-color: var(--background-primary);
+    font-family: var(--font-interface);
+}
+
+.buffer-calc-ui {
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Header */
+.buffer-calc-header {
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 8px;
+}
+
+.buffer-calc-title {
+    margin: 0 0 4px 0;
+    color: var(--text-normal);
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+/* Controls */
+.buffer-calc-controls {
+    margin-bottom: 20px;
+}
+
+.buffer-calc-volume-input {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.buffer-calc-volume-input label {
+    font-weight: 500;
+    color: var(--text-normal);
+    min-width: 100px;
+}
+
+/* Components */
+.buffer-calc-components {
+    margin-bottom: 20px;
+}
+
+.buffer-calc-components h4 {
+    margin: 0 0 12px 0;
+    color: var(--text-normal);
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.buffer-calc-components-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.buffer-calc-component {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-secondary);
+}
+
+.buffer-calc-component-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.buffer-calc-component-header span {
+    font-weight: 500;
+    color: var(--text-normal);
+}
+
+.buffer-calc-delete-button {
+    background: none;
+    border: none;
+    color: var(--text-error);
+    cursor: pointer;
+    font-size: 18px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.buffer-calc-delete-button:hover {
+    background-color: var(--background-modifier-error);
+}
+
+/* Input groups */
+.buffer-calc-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.buffer-calc-input-group label {
+    font-weight: 500;
+    color: var(--text-normal);
+    min-width: 120px;
+    font-size: 0.9em;
+}
+
+/* Input styles */
+.buffer-calc-input-number,
+.buffer-calc-reagent-input,
+.buffer-calc-lot-input {
+    padding: 4px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 0.9em;
+    min-width: 80px;
+}
+
+.buffer-calc-reagent-input {
+    min-width: 150px;
+    flex: 1;
+}
+
+.buffer-calc-input-number:focus,
+.buffer-calc-reagent-input:focus,
+.buffer-calc-lot-input:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--interactive-accent-rgb-low);
+}
+
+.buffer-calc-unit-select {
+    padding: 4px 6px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 0.9em;
+    cursor: pointer;
+}
+
+.buffer-calc-unit-select:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+}
+
+/* Suggestions */
+.buffer-calc-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 120px;
+    right: 0;
+    background-color: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    box-shadow: 0 4px 12px var(--shadow-color);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.buffer-calc-suggestion-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--background-modifier-border);
+    color: var(--text-normal);
+    font-size: 0.9em;
+}
+
+.buffer-calc-suggestion-item:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+.buffer-calc-suggestion-item:last-child {
+    border-bottom: none;
+}
+
+/* Buttons */
+.buffer-calc-add-button,
+.buffer-calc-export-button {
+    background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.buffer-calc-add-button:hover,
+.buffer-calc-export-button:hover {
+    background-color: var(--interactive-accent-hover);
+}
+
+.buffer-calc-export-button {
+    margin-top: 16px;
+}
+
+/* Results */
+.buffer-calc-results {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.buffer-calc-results h4,
+.buffer-calc-results h5 {
+    margin: 0 0 12px 0;
+    color: var(--text-normal);
+    font-weight: 600;
+}
+
+.buffer-calc-results h4 {
+    font-size: 1.1em;
+}
+
+.buffer-calc-results h5 {
+    font-size: 1em;
+    margin-top: 16px;
+}
+
+.buffer-calc-instructions {
+    list-style: decimal;
+    padding-left: 20px;
+    margin: 12px 0;
+}
+
+.buffer-calc-instruction-item {
+    margin-bottom: 12px;
+    color: var(--text-normal);
+    line-height: 1.5;
+}
+
+.buffer-calc-instruction-item strong {
+    color: var(--text-accent);
+}
+
+.buffer-calc-percentage {
+    color: var(--text-muted);
+    font-size: 0.9em;
+}
+
+.buffer-calc-links {
+    margin-top: 4px;
+    display: flex;
+    gap: 8px;
+}
+
+.buffer-calc-external-link {
+    font-size: 0.8em;
+    color: var(--text-accent);
+    text-decoration: none;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background-color: var(--background-secondary);
+    transition: background-color 0.2s;
+}
+
+.buffer-calc-external-link:hover {
+    background-color: var(--background-modifier-hover);
+    text-decoration: none;
+}
+
+/* Errors and warnings */
+.buffer-calc-error,
+.buffer-calc-errors {
+    background-color: var(--background-modifier-error);
+    border: 1px solid var(--text-error);
+    border-radius: 4px;
+    padding: 12px;
+    margin: 8px 0;
+}
+
+.buffer-calc-error {
+    color: var(--text-error);
+    font-weight: 500;
+}
+
+.buffer-calc-error-title {
+    color: var(--text-error);
+    margin: 0 0 8px 0;
+    font-size: 1em;
+    font-weight: 600;
+}
+
+.buffer-calc-error-item {
+    color: var(--text-error);
+    margin-bottom: 4px;
+}
+
+.buffer-calc-warnings {
+    margin: 16px 0;
+}
+
+.buffer-calc-warning {
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    font-size: 0.9em;
+}
+
+.buffer-calc-warning-low {
+    background-color: var(--background-secondary);
+    border-left: 4px solid var(--text-accent);
+    color: var(--text-normal);
+}
+
+.buffer-calc-warning-medium {
+    background-color: var(--color-orange-rgb-low);
+    border-left: 4px solid var(--color-orange);
+    color: var(--text-normal);
+}
+
+.buffer-calc-warning-high {
+    background-color: var(--background-modifier-error);
+    border-left: 4px solid var(--text-error);
+    color: var(--text-error);
+}
+
+/* Calculation steps */
+.buffer-calc-steps {
+    margin: 16px 0;
+}
+
+.buffer-calc-step {
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background-color: var(--background-secondary);
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+.buffer-calc-formula {
+    font-family: var(--font-monospace);
+    background-color: var(--background-primary);
+    padding: 4px 8px;
+    border-radius: 3px;
+    margin: 4px 0;
+    color: var(--text-muted);
+}
+
+.buffer-calc-step-result {
+    font-weight: 500;
+    color: var(--text-accent);
+    margin-top: 4px;
+}
+
+/* Placeholder styles */
+.buffer-calc-placeholder {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    background-color: var(--background-secondary);
+    border-radius: 4px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .buffer-calc-container {
+        padding: 12px;
+    }
+    
+    .buffer-calc-input-group {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .buffer-calc-input-group label {
+        min-width: auto;
+    }
+    
+    .buffer-calc-volume-input {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    .buffer-calc-volume-input label {
+        min-width: auto;
+    }
+    
+    .buffer-calc-suggestions {
+        left: 0;
+    }
+    
+    .buffer-calc-links {
+        flex-wrap: wrap;
+    }
+}
+
+/* Dark theme adjustments */
+.theme-dark .buffer-calc-container {
+    border-color: var(--background-modifier-border);
+}
+
+.theme-dark .buffer-calc-input-number,
+.theme-dark .buffer-calc-reagent-input,
+.theme-dark .buffer-calc-lot-input,
+.theme-dark .buffer-calc-unit-select {
+    border-color: var(--background-modifier-border);
+    background-color: var(--background-primary);
+}
+
+/* Settings styles */
+.buffer-calc-reagent-list {
+    margin: 12px 0;
+}
+
+.buffer-calc-no-reagents {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.buffer-calc-reagent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background-color: var(--background-secondary);
+}
+
+.buffer-calc-reagent-info {
+    flex: 1;
+}
+
+.buffer-calc-reagent-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.buffer-calc-modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}

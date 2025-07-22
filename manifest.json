@@ -1,0 +1,11 @@
+{
+	"id": "buffer-calc",
+	"name": "Buffer Calc",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "Calculate buffer preparations seamlessly in your Obsidian research notes with multi-component calculations, stock solutions, and recipe management.",
+	"author": "Your Name",
+	"authorUrl": "https://your-website.com",
+	"fundingUrl": "https://buymeacoffee.com/yourusername",
+	"isDesktopOnly": false
+}
