@@ -81,6 +81,8 @@ var init_types = __esm({
     })(WarningType || {});
     ErrorType = /* @__PURE__ */ ((ErrorType2) => {
       ErrorType2["IMPOSSIBLE_CONCENTRATION"] = "impossible_concentration";
+      ErrorType2["INVALID_CONCENTRATION"] = "invalid_concentration";
+      ErrorType2["INVALID_VOLUME"] = "invalid_volume";
       ErrorType2["NEGATIVE_VALUE"] = "negative_value";
       ErrorType2["MISSING_REQUIRED_FIELD"] = "missing_required_field";
       ErrorType2["INVALID_MOLECULAR_WEIGHT"] = "invalid_molecular_weight";
@@ -414,6 +416,212 @@ var ReagentEditorModal = class extends import_obsidian.Modal {
 
 // src/calculations/engine.ts
 init_types();
+
+// src/utils/conversions.ts
+init_types();
+var ConversionUtils = class {
+  /**
+   * Convert volume between different units
+   */
+  static convertVolume(value, fromUnit, toUnit) {
+    if (fromUnit === toUnit)
+      return value;
+    const inLiters = value / VOLUME_CONVERSION_FACTORS[fromUnit];
+    return inLiters * VOLUME_CONVERSION_FACTORS[toUnit];
+  }
+  /**
+   * Convert mass between different units
+   */
+  static convertMass(value, fromUnit, toUnit) {
+    if (fromUnit === toUnit)
+      return value;
+    const inGrams = value / MASS_CONVERSION_FACTORS[fromUnit];
+    return inGrams * MASS_CONVERSION_FACTORS[toUnit];
+  }
+  /**
+   * Convert concentration between molar units (M, mM, µM, nM)
+   */
+  static convertMolarConcentration(value, fromUnit, toUnit) {
+    if (fromUnit === toUnit)
+      return value;
+    const molarUnits = [
+      "M" /* MOLAR */,
+      "mM" /* MILLIMOLAR */,
+      "\xB5M" /* MICROMOLAR */,
+      "nM" /* NANOMOLAR */
+    ];
+    if (!molarUnits.includes(fromUnit) || !molarUnits.includes(toUnit)) {
+      throw new Error("Can only convert between molar concentration units (M, mM, \xB5M, nM)");
+    }
+    const inMolar = value / CONCENTRATION_CONVERSION_FACTORS[fromUnit];
+    return inMolar * CONCENTRATION_CONVERSION_FACTORS[toUnit];
+  }
+  /**
+   * Convert concentration to molarity (requires molecular weight for non-molar units)
+   */
+  static convertToMolarity(value, unit, molecularWeight) {
+    const molarUnits = [
+      "M" /* MOLAR */,
+      "mM" /* MILLIMOLAR */,
+      "\xB5M" /* MICROMOLAR */,
+      "nM" /* NANOMOLAR */
+    ];
+    if (molarUnits.includes(unit)) {
+      return this.convertMolarConcentration(value, unit, "M" /* MOLAR */);
+    }
+    if (!molecularWeight || molecularWeight <= 0) {
+      throw new Error("Molecular weight is required to convert from mass-based concentrations to molarity");
+    }
+    switch (unit) {
+      case "mg/mL" /* MG_ML */:
+        return value / (molecularWeight * 1e3);
+      case "\xB5g/mL" /* UG_ML */:
+        return value / (molecularWeight * 1e6);
+      case "%(w/v)" /* PERCENT_W_V */:
+        return value * 1e4 / (molecularWeight * 1e3);
+      default:
+        throw new Error(`Conversion from ${unit} to molarity not implemented`);
+    }
+  }
+  /**
+   * Format number with appropriate decimal places
+   */
+  static formatNumber(value, decimalPlaces = 2) {
+    return Number(value.toFixed(decimalPlaces)).toString();
+  }
+  /**
+   * Get the most appropriate volume unit for display
+   */
+  static optimizeVolumeDisplay(volume, unit) {
+    const conversions = [
+      { unit: "L" /* LITER */, min: 1, max: Infinity },
+      { unit: "mL" /* MILLILITER */, min: 1, max: 1e3 },
+      { unit: "\xB5L" /* MICROLITER */, min: 1, max: 1e3 },
+      { unit: "nL" /* NANOLITER */, min: 0, max: 1e3 }
+    ];
+    for (const conversion of conversions) {
+      const convertedValue = this.convertVolume(volume, unit, conversion.unit);
+      if (convertedValue >= conversion.min && convertedValue < conversion.max) {
+        return { value: convertedValue, unit: conversion.unit };
+      }
+    }
+    return { value: volume, unit };
+  }
+  /**
+   * Get the most appropriate mass unit for display
+   */
+  static optimizeMassDisplay(mass, unit) {
+    const conversions = [
+      { unit: "g" /* GRAM */, min: 1, max: Infinity },
+      { unit: "mg" /* MILLIGRAM */, min: 1, max: 1e3 },
+      { unit: "\xB5g" /* MICROGRAM */, min: 1, max: 1e3 },
+      { unit: "ng" /* NANOGRAM */, min: 0, max: 1e3 }
+    ];
+    for (const conversion of conversions) {
+      const convertedValue = this.convertMass(mass, unit, conversion.unit);
+      if (convertedValue >= conversion.min && convertedValue < conversion.max) {
+        return { value: convertedValue, unit: conversion.unit };
+      }
+    }
+    return { value: mass, unit };
+  }
+  /**
+   * Calculate dilution factor
+   */
+  static calculateDilutionFactor(stockConc, finalConc) {
+    if (finalConc <= 0) {
+      throw new Error("Final concentration must be greater than 0");
+    }
+    return stockConc / finalConc;
+  }
+  /**
+   * Validate that a concentration conversion is possible
+   */
+  static canConvertConcentration(fromUnit, toUnit) {
+    const molarUnits = [
+      "M" /* MOLAR */,
+      "mM" /* MILLIMOLAR */,
+      "\xB5M" /* MICROMOLAR */,
+      "nM" /* NANOMOLAR */
+    ];
+    const massUnits = [
+      "mg/mL" /* MG_ML */,
+      "\xB5g/mL" /* UG_ML */
+    ];
+    const percentUnits = [
+      "%(w/v)" /* PERCENT_W_V */,
+      "%(w/w)" /* PERCENT_W_W */,
+      "%(v/v)" /* PERCENT_V_V */
+    ];
+    if (molarUnits.includes(fromUnit) && molarUnits.includes(toUnit))
+      return true;
+    if (massUnits.includes(fromUnit) && massUnits.includes(toUnit))
+      return true;
+    if (percentUnits.includes(fromUnit) && percentUnits.includes(toUnit))
+      return true;
+    if (molarUnits.includes(fromUnit) && massUnits.includes(toUnit))
+      return true;
+    if (massUnits.includes(fromUnit) && molarUnits.includes(toUnit))
+      return true;
+    if (molarUnits.includes(fromUnit) && fromUnit === "%(w/v)" /* PERCENT_W_V */)
+      return true;
+    if (fromUnit === "%(w/v)" /* PERCENT_W_V */ && molarUnits.includes(toUnit))
+      return true;
+    return false;
+  }
+  /**
+   * Get human-readable unit names
+   */
+  static getUnitDisplayName(unit) {
+    const displayNames = {
+      // Volume units
+      ["L" /* LITER */]: "Liter",
+      ["mL" /* MILLILITER */]: "Milliliter",
+      ["\xB5L" /* MICROLITER */]: "Microliter",
+      ["nL" /* NANOLITER */]: "Nanoliter",
+      // Concentration units
+      ["M" /* MOLAR */]: "Molar",
+      ["mM" /* MILLIMOLAR */]: "Millimolar",
+      ["\xB5M" /* MICROMOLAR */]: "Micromolar",
+      ["nM" /* NANOMOLAR */]: "Nanomolar",
+      ["%(w/v)" /* PERCENT_W_V */]: "Percent (w/v)",
+      ["%(w/w)" /* PERCENT_W_W */]: "Percent (w/w)",
+      ["%(v/v)" /* PERCENT_V_V */]: "Percent (v/v)",
+      ["mg/mL" /* MG_ML */]: "mg/mL",
+      ["\xB5g/mL" /* UG_ML */]: "\xB5g/mL",
+      ["ppm" /* PPM */]: "Parts per million",
+      ["ppb" /* PPB */]: "Parts per billion",
+      // Mass units
+      ["g" /* GRAM */]: "Gram",
+      ["mg" /* MILLIGRAM */]: "Milligram",
+      ["\xB5g" /* MICROGRAM */]: "Microgram",
+      ["ng" /* NANOGRAM */]: "Nanogram"
+    };
+    return displayNames[unit] || unit;
+  }
+  /**
+   * Validate numeric input
+   */
+  static validatePositiveNumber(value, fieldName) {
+    const num = Number(value);
+    if (isNaN(num) || num <= 0) {
+      throw new Error(`${fieldName} must be a positive number`);
+    }
+    return num;
+  }
+  /**
+   * Validate non-negative numeric input
+   */
+  static validateNonNegativeNumber(value, fieldName) {
+    const num = Number(value);
+    if (isNaN(num) || num < 0) {
+      throw new Error(`${fieldName} must be a non-negative number`);
+    }
+    return num;
+  }
+};
+
+// src/calculations/engine.ts
 var CalculationEngine = class {
   constructor(settings) {
     this.settings = settings;
@@ -461,7 +669,7 @@ var CalculationEngine = class {
       } catch (error) {
         errors.push({
           type: "calculation_error" /* CALCULATION_ERROR */,
-          message: `Error calculating component ${component.name}: ${error.message}`,
+          message: `\u6210\u5206 ${component.name} \u306E\u8A08\u7B97\u30A8\u30E9\u30FC: ${error.message}`,
           componentIndex: index
         });
       }
@@ -485,14 +693,14 @@ var CalculationEngine = class {
     if (solventVolumeL < 0) {
       warnings.push({
         type: "volume_overflow" /* VOLUME_OVERFLOW */,
-        message: "Component volumes exceed total volume. Consider increasing total volume.",
+        message: "\u6210\u5206\u306E\u4F53\u7A4D\u304C\u7DCF\u4F53\u7A4D\u3092\u8D85\u3048\u3066\u3044\u307E\u3059\u3002\u7DCF\u4F53\u7A4D\u3092\u5897\u3084\u3059\u3053\u3068\u3092\u691C\u8A0E\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
         severity: "high"
       });
     }
     if (solventVolumeL < totalVolumeL * 0.1) {
       warnings.push({
         type: "small_volume" /* SMALL_VOLUME */,
-        message: "Solvent volume is very small. Consider reducing component concentrations.",
+        message: "\u6EB6\u5A92\u306E\u4F53\u7A4D\u304C\u975E\u5E38\u306B\u5C0F\u3055\u304F\u306A\u3063\u3066\u3044\u307E\u3059\u3002\u6210\u5206\u6FC3\u5EA6\u3092\u4E0B\u3052\u308B\u3053\u3068\u3092\u691C\u8A0E\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
         severity: "medium"
       });
     }
@@ -519,7 +727,7 @@ var CalculationEngine = class {
       "M" /* MOLAR */
     );
     if (finalConcM > stockConcM) {
-      throw new Error(`Final concentration (${component.finalConc} ${component.finalUnit}) cannot be higher than stock concentration (${component.stockConc} ${component.stockUnit})`);
+      throw new Error(`\u6700\u7D42\u6FC3\u5EA6 (${component.finalConc} ${component.finalUnit}) \u306F\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6 (${component.stockConc} ${component.stockUnit}) \u3088\u308A\u9AD8\u304F\u3059\u308B\u3053\u3068\u306F\u3067\u304D\u307E\u305B\u3093`);
     }
     const requiredVolumeL = finalConcM * totalVolumeL / stockConcM;
     const requiredVolume = this.convertVolume(
@@ -570,7 +778,7 @@ var CalculationEngine = class {
     if (!data.molecularWeight || data.molecularWeight <= 0) {
       errors.push({
         type: "invalid_molecular_weight" /* INVALID_MOLECULAR_WEIGHT */,
-        message: "Valid molecular weight is required for stock solution calculation",
+        message: "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97\u306B\u306F\u6709\u52B9\u306A\u5206\u5B50\u91CF\u304C\u5FC5\u8981\u3067\u3059",
         field: "molecularWeight"
       });
     }
@@ -578,7 +786,7 @@ var CalculationEngine = class {
       return {
         recipe: {
           id: "",
-          name: `${data.reagent} Stock Solution`,
+          name: `${data.reagentName} \u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2`,
           totalVolume: data.volume,
           totalVolumeUnit: data.volumeUnit,
           components: [],
@@ -606,16 +814,16 @@ var CalculationEngine = class {
     if (this.settings.showCalculationSteps) {
       calculationSteps.push({
         step: 1,
-        description: "Calculate required mass",
-        formula: `Mass = Concentration \xD7 Volume \xD7 Molecular Weight = ${concentrationM} mol/L \xD7 ${volumeL} L \xD7 ${data.molecularWeight} g/mol`,
+        description: "\u5FC5\u8981\u8CEA\u91CF\u3092\u8A08\u7B97",
+        formula: `\u8CEA\u91CF = \u6FC3\u5EA6 \xD7 \u4F53\u7A4D \xD7 \u5206\u5B50\u91CF = ${concentrationM} mol/L \xD7 ${volumeL} L \xD7 ${data.molecularWeight} g/mol`,
         result: massG,
         unit: "g" /* GRAM */
       });
       if (data.purity && data.purity !== 100) {
         calculationSteps.push({
           step: 2,
-          description: "Adjust for purity",
-          formula: `Adjusted mass = ${massG} g / (${data.purity}% / 100%)`,
+          description: "\u7D14\u5EA6\u88DC\u6B63",
+          formula: `\u88DC\u6B63\u8CEA\u91CF = ${massG} g / (${data.purity}% / 100%)`,
           result: massG / (data.purity / 100),
           unit: "g" /* GRAM */
         });
@@ -624,20 +832,20 @@ var CalculationEngine = class {
     if (massG < 1e-3) {
       warnings.push({
         type: "small_volume" /* SMALL_VOLUME */,
-        message: "Very small mass required. Consider making a more dilute stock solution.",
+        message: "\u975E\u5E38\u306B\u5C0F\u3055\u3044\u8CEA\u91CF\u304C\u5FC5\u8981\u3067\u3059\u3002\u3088\u308A\u5E0C\u8584\u306A\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u306E\u4F5C\u6210\u3092\u691C\u8A0E\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
         severity: "medium"
       });
     }
     if (massG > 10) {
       warnings.push({
         type: "large_volume" /* LARGE_VOLUME */,
-        message: "Large mass required. Consider making a smaller volume or more concentrated stock.",
+        message: "\u5927\u304D\u3044\u8CEA\u91CF\u304C\u5FC5\u8981\u3067\u3059\u3002\u3088\u308A\u5C0F\u3055\u3044\u4F53\u7A4D\u307E\u305F\u306F\u3088\u308A\u6FC3\u7E2E\u3055\u308C\u305F\u30B9\u30C8\u30C3\u30AF\u306E\u4F5C\u6210\u3092\u691C\u8A0E\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
         severity: "low"
       });
     }
     const component = {
       reagent: {
-        name: data.reagent,
+        name: data.reagentName,
         molecularWeight: data.molecularWeight
       },
       stockConcentration: data.targetConcentration,
@@ -654,7 +862,7 @@ var CalculationEngine = class {
     return {
       recipe: {
         id: "",
-        name: `${data.reagent} Stock Solution`,
+        name: `${data.reagentName} \u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2`,
         totalVolume: data.volume,
         totalVolumeUnit: data.volumeUnit,
         components: [component],
@@ -785,6 +993,183 @@ var CalculationEngine = class {
       components: [],
       createdAt: new Date(),
       updatedAt: new Date()
+    };
+  }
+  calculateDilution(data) {
+    console.log("calculateDilution called with data:", data);
+    const errors = [];
+    const warnings = [];
+    const calculationSteps = [];
+    const stockConcentration = Number(data.stockConcentration);
+    const finalConcentration = Number(data.finalConcentration);
+    const finalVolume = Number(data.finalVolume);
+    console.log("Converted values:", {
+      stockConcentration,
+      finalConcentration,
+      finalVolume,
+      originalTypes: {
+        stockConcentration: typeof data.stockConcentration,
+        finalConcentration: typeof data.finalConcentration,
+        finalVolume: typeof data.finalVolume
+      }
+    });
+    console.log("Validating stockConcentration:", stockConcentration, typeof stockConcentration);
+    if (stockConcentration <= 0 || isNaN(stockConcentration)) {
+      console.log("Stock concentration validation failed");
+      errors.push({
+        type: "invalid_concentration" /* INVALID_CONCENTRATION */,
+        message: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6\u306F0\u3088\u308A\u5927\u304D\u3044\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        field: "stockConcentration"
+      });
+    }
+    console.log("Validating finalConcentration:", finalConcentration, typeof finalConcentration);
+    if (finalConcentration <= 0 || isNaN(finalConcentration)) {
+      console.log("Final concentration validation failed");
+      errors.push({
+        type: "invalid_concentration" /* INVALID_CONCENTRATION */,
+        message: "\u6700\u7D42\u6FC3\u5EA6\u306F0\u3088\u308A\u5927\u304D\u3044\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        field: "finalConcentration"
+      });
+    }
+    const stockConcForComparison = this.convertConcentration(
+      stockConcentration,
+      data.stockConcentrationUnit,
+      "M" /* MOLAR */
+    );
+    const finalConcForComparison = this.convertConcentration(
+      finalConcentration,
+      data.finalConcentrationUnit,
+      "M" /* MOLAR */
+    );
+    console.log("Checking concentration comparison after unit conversion:", {
+      finalConc: finalConcForComparison,
+      stockConc: stockConcForComparison,
+      originalFinal: finalConcentration,
+      originalStock: stockConcentration,
+      finalUnit: data.finalConcentrationUnit,
+      stockUnit: data.stockConcentrationUnit
+    });
+    if (finalConcForComparison >= stockConcForComparison) {
+      console.log("Concentration comparison validation failed");
+      errors.push({
+        type: "invalid_concentration" /* INVALID_CONCENTRATION */,
+        message: "\u6700\u7D42\u6FC3\u5EA6\u306F\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6\u3088\u308A\u5C0F\u3055\u3044\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        field: "finalConcentration"
+      });
+    }
+    console.log("Validating finalVolume:", finalVolume, typeof finalVolume);
+    if (finalVolume <= 0 || isNaN(finalVolume)) {
+      console.log("Final volume validation failed");
+      errors.push({
+        type: "invalid_volume" /* INVALID_VOLUME */,
+        message: "\u6700\u7D42\u4F53\u7A4D\u306F0\u3088\u308A\u5927\u304D\u3044\u5FC5\u8981\u304C\u3042\u308A\u307E\u3059",
+        field: "finalVolume"
+      });
+    }
+    if (errors.length > 0) {
+      console.log("Validation errors found:", errors);
+      return {
+        recipe: {
+          id: "",
+          name: data.name || "\u5E0C\u91C8\u8A08\u7B97",
+          totalVolume: data.finalVolume,
+          totalVolumeUnit: data.volumeUnit,
+          components: [],
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        components: [],
+        solventVolume: 0,
+        warnings,
+        errors,
+        calculationSteps
+      };
+    }
+    const stockConcM = this.convertConcentration(
+      stockConcentration,
+      data.stockConcentrationUnit,
+      "M" /* MOLAR */
+    );
+    const finalConcM = this.convertConcentration(
+      finalConcentration,
+      data.finalConcentrationUnit,
+      "M" /* MOLAR */
+    );
+    const finalVolumeL = this.convertVolume(finalVolume, data.volumeUnit, "L" /* LITER */);
+    const dilutionFactor = stockConcM / finalConcM;
+    const stockVolumeNeededL = finalConcM * finalVolumeL / stockConcM;
+    const solventVolumeL = finalVolumeL - stockVolumeNeededL;
+    const stockVolumeNeeded = this.convertVolume(stockVolumeNeededL, "L" /* LITER */, data.volumeUnit);
+    const solventVolume = this.convertVolume(solventVolumeL, "L" /* LITER */, data.volumeUnit);
+    if (this.settings.showCalculationSteps) {
+      calculationSteps.push({
+        step: 1,
+        description: "\u5E0C\u91C8\u500D\u7387\u3092\u8A08\u7B97",
+        formula: `\u5E0C\u91C8\u500D\u7387 = \u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6 / \u6700\u7D42\u6FC3\u5EA6 = ${stockConcM} M / ${finalConcM} M`,
+        result: dilutionFactor,
+        unit: ""
+      });
+      calculationSteps.push({
+        step: 2,
+        description: "\u5FC5\u8981\u306A\u30B9\u30C8\u30C3\u30AF\u4F53\u7A4D\u3092\u8A08\u7B97 (C1V1 = C2V2)",
+        formula: `V1 = (C2 \xD7 V2) / C1 = (${finalConcM} M \xD7 ${finalVolumeL} L) / ${stockConcM} M`,
+        result: stockVolumeNeededL,
+        unit: "L" /* LITER */
+      });
+      calculationSteps.push({
+        step: 3,
+        description: "\u6EB6\u5A92\u4F53\u7A4D\u3092\u8A08\u7B97",
+        formula: `\u6EB6\u5A92\u4F53\u7A4D = \u6700\u7D42\u4F53\u7A4D - \u30B9\u30C8\u30C3\u30AF\u4F53\u7A4D = ${finalVolumeL} L - ${stockVolumeNeededL} L`,
+        result: solventVolumeL,
+        unit: "L" /* LITER */
+      });
+    }
+    if (dilutionFactor < 2) {
+      warnings.push({
+        type: "small_volume" /* SMALL_VOLUME */,
+        message: "\u5E0C\u91C8\u500D\u7387\u304C\u5C0F\u3055\u3059\u304E\u307E\u3059\u3002\u3088\u308A\u5927\u304D\u306A\u5E0C\u91C8\u500D\u7387\u3092\u691C\u8A0E\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+        severity: "medium"
+      });
+    }
+    if (stockVolumeNeededL < 1e-3) {
+      warnings.push({
+        type: "small_volume" /* SMALL_VOLUME */,
+        message: "\u5FC5\u8981\u306A\u30B9\u30C8\u30C3\u30AF\u4F53\u7A4D\u304C\u975E\u5E38\u306B\u5C0F\u3055\u3044\u3067\u3059\u3002\u30D4\u30DA\u30C3\u30C6\u30A3\u30F3\u30B0\u304C\u56F0\u96E3\u306A\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002",
+        severity: "medium"
+      });
+    }
+    const component = {
+      reagent: {
+        name: data.name || "\u8A66\u85AC",
+        molecularWeight: 0
+      },
+      stockConcentration,
+      stockConcentrationUnit: data.stockConcentrationUnit,
+      finalConcentration,
+      finalConcentrationUnit: data.finalConcentrationUnit,
+      volumeNeeded: stockVolumeNeededL,
+      volumeUnit: data.volumeUnit,
+      optimizedVolumeDisplay: (() => {
+        const optimized = ConversionUtils.optimizeVolumeDisplay(stockVolumeNeeded, data.volumeUnit);
+        return `${optimized.value.toFixed(this.settings.decimalPlaces)} ${optimized.unit}`;
+      })(),
+      percentOfTotal: stockVolumeNeededL / finalVolumeL * 100
+    };
+    return {
+      recipe: {
+        id: "",
+        name: data.name || "\u5E0C\u91C8\u8A08\u7B97",
+        totalVolume: finalVolume,
+        totalVolumeUnit: data.volumeUnit,
+        components: [component],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      components: [component],
+      solventVolume,
+      warnings,
+      errors,
+      calculationSteps
     };
   }
 };
@@ -1204,212 +1589,6 @@ var ReagentDatabase = class {
 // src/ui/buffer-calc-ui.ts
 var import_obsidian2 = require("obsidian");
 init_types();
-
-// src/utils/conversions.ts
-init_types();
-var ConversionUtils = class {
-  /**
-   * Convert volume between different units
-   */
-  static convertVolume(value, fromUnit, toUnit) {
-    if (fromUnit === toUnit)
-      return value;
-    const inLiters = value / VOLUME_CONVERSION_FACTORS[fromUnit];
-    return inLiters * VOLUME_CONVERSION_FACTORS[toUnit];
-  }
-  /**
-   * Convert mass between different units
-   */
-  static convertMass(value, fromUnit, toUnit) {
-    if (fromUnit === toUnit)
-      return value;
-    const inGrams = value / MASS_CONVERSION_FACTORS[fromUnit];
-    return inGrams * MASS_CONVERSION_FACTORS[toUnit];
-  }
-  /**
-   * Convert concentration between molar units (M, mM, µM, nM)
-   */
-  static convertMolarConcentration(value, fromUnit, toUnit) {
-    if (fromUnit === toUnit)
-      return value;
-    const molarUnits = [
-      "M" /* MOLAR */,
-      "mM" /* MILLIMOLAR */,
-      "\xB5M" /* MICROMOLAR */,
-      "nM" /* NANOMOLAR */
-    ];
-    if (!molarUnits.includes(fromUnit) || !molarUnits.includes(toUnit)) {
-      throw new Error("Can only convert between molar concentration units (M, mM, \xB5M, nM)");
-    }
-    const inMolar = value / CONCENTRATION_CONVERSION_FACTORS[fromUnit];
-    return inMolar * CONCENTRATION_CONVERSION_FACTORS[toUnit];
-  }
-  /**
-   * Convert concentration to molarity (requires molecular weight for non-molar units)
-   */
-  static convertToMolarity(value, unit, molecularWeight) {
-    const molarUnits = [
-      "M" /* MOLAR */,
-      "mM" /* MILLIMOLAR */,
-      "\xB5M" /* MICROMOLAR */,
-      "nM" /* NANOMOLAR */
-    ];
-    if (molarUnits.includes(unit)) {
-      return this.convertMolarConcentration(value, unit, "M" /* MOLAR */);
-    }
-    if (!molecularWeight || molecularWeight <= 0) {
-      throw new Error("Molecular weight is required to convert from mass-based concentrations to molarity");
-    }
-    switch (unit) {
-      case "mg/mL" /* MG_ML */:
-        return value / (molecularWeight * 1e3);
-      case "\xB5g/mL" /* UG_ML */:
-        return value / (molecularWeight * 1e6);
-      case "%(w/v)" /* PERCENT_W_V */:
-        return value * 1e4 / (molecularWeight * 1e3);
-      default:
-        throw new Error(`Conversion from ${unit} to molarity not implemented`);
-    }
-  }
-  /**
-   * Format number with appropriate decimal places
-   */
-  static formatNumber(value, decimalPlaces = 2) {
-    return Number(value.toFixed(decimalPlaces)).toString();
-  }
-  /**
-   * Get the most appropriate volume unit for display
-   */
-  static optimizeVolumeDisplay(volume, unit) {
-    const conversions = [
-      { unit: "L" /* LITER */, min: 1, max: Infinity },
-      { unit: "mL" /* MILLILITER */, min: 1, max: 1e3 },
-      { unit: "\xB5L" /* MICROLITER */, min: 1, max: 1e3 },
-      { unit: "nL" /* NANOLITER */, min: 0, max: 1e3 }
-    ];
-    for (const conversion of conversions) {
-      const convertedValue = this.convertVolume(volume, unit, conversion.unit);
-      if (convertedValue >= conversion.min && convertedValue < conversion.max) {
-        return { value: convertedValue, unit: conversion.unit };
-      }
-    }
-    return { value: volume, unit };
-  }
-  /**
-   * Get the most appropriate mass unit for display
-   */
-  static optimizeMassDisplay(mass, unit) {
-    const conversions = [
-      { unit: "g" /* GRAM */, min: 1, max: Infinity },
-      { unit: "mg" /* MILLIGRAM */, min: 1, max: 1e3 },
-      { unit: "\xB5g" /* MICROGRAM */, min: 1, max: 1e3 },
-      { unit: "ng" /* NANOGRAM */, min: 0, max: 1e3 }
-    ];
-    for (const conversion of conversions) {
-      const convertedValue = this.convertMass(mass, unit, conversion.unit);
-      if (convertedValue >= conversion.min && convertedValue < conversion.max) {
-        return { value: convertedValue, unit: conversion.unit };
-      }
-    }
-    return { value: mass, unit };
-  }
-  /**
-   * Calculate dilution factor
-   */
-  static calculateDilutionFactor(stockConc, finalConc) {
-    if (finalConc <= 0) {
-      throw new Error("Final concentration must be greater than 0");
-    }
-    return stockConc / finalConc;
-  }
-  /**
-   * Validate that a concentration conversion is possible
-   */
-  static canConvertConcentration(fromUnit, toUnit) {
-    const molarUnits = [
-      "M" /* MOLAR */,
-      "mM" /* MILLIMOLAR */,
-      "\xB5M" /* MICROMOLAR */,
-      "nM" /* NANOMOLAR */
-    ];
-    const massUnits = [
-      "mg/mL" /* MG_ML */,
-      "\xB5g/mL" /* UG_ML */
-    ];
-    const percentUnits = [
-      "%(w/v)" /* PERCENT_W_V */,
-      "%(w/w)" /* PERCENT_W_W */,
-      "%(v/v)" /* PERCENT_V_V */
-    ];
-    if (molarUnits.includes(fromUnit) && molarUnits.includes(toUnit))
-      return true;
-    if (massUnits.includes(fromUnit) && massUnits.includes(toUnit))
-      return true;
-    if (percentUnits.includes(fromUnit) && percentUnits.includes(toUnit))
-      return true;
-    if (molarUnits.includes(fromUnit) && massUnits.includes(toUnit))
-      return true;
-    if (massUnits.includes(fromUnit) && molarUnits.includes(toUnit))
-      return true;
-    if (molarUnits.includes(fromUnit) && fromUnit === "%(w/v)" /* PERCENT_W_V */)
-      return true;
-    if (fromUnit === "%(w/v)" /* PERCENT_W_V */ && molarUnits.includes(toUnit))
-      return true;
-    return false;
-  }
-  /**
-   * Get human-readable unit names
-   */
-  static getUnitDisplayName(unit) {
-    const displayNames = {
-      // Volume units
-      ["L" /* LITER */]: "Liter",
-      ["mL" /* MILLILITER */]: "Milliliter",
-      ["\xB5L" /* MICROLITER */]: "Microliter",
-      ["nL" /* NANOLITER */]: "Nanoliter",
-      // Concentration units
-      ["M" /* MOLAR */]: "Molar",
-      ["mM" /* MILLIMOLAR */]: "Millimolar",
-      ["\xB5M" /* MICROMOLAR */]: "Micromolar",
-      ["nM" /* NANOMOLAR */]: "Nanomolar",
-      ["%(w/v)" /* PERCENT_W_V */]: "Percent (w/v)",
-      ["%(w/w)" /* PERCENT_W_W */]: "Percent (w/w)",
-      ["%(v/v)" /* PERCENT_V_V */]: "Percent (v/v)",
-      ["mg/mL" /* MG_ML */]: "mg/mL",
-      ["\xB5g/mL" /* UG_ML */]: "\xB5g/mL",
-      ["ppm" /* PPM */]: "Parts per million",
-      ["ppb" /* PPB */]: "Parts per billion",
-      // Mass units
-      ["g" /* GRAM */]: "Gram",
-      ["mg" /* MILLIGRAM */]: "Milligram",
-      ["\xB5g" /* MICROGRAM */]: "Microgram",
-      ["ng" /* NANOGRAM */]: "Nanogram"
-    };
-    return displayNames[unit] || unit;
-  }
-  /**
-   * Validate numeric input
-   */
-  static validatePositiveNumber(value, fieldName) {
-    const num = Number(value);
-    if (isNaN(num) || num <= 0) {
-      throw new Error(`${fieldName} must be a positive number`);
-    }
-    return num;
-  }
-  /**
-   * Validate non-negative numeric input
-   */
-  static validateNonNegativeNumber(value, fieldName) {
-    const num = Number(value);
-    if (isNaN(num) || num < 0) {
-      throw new Error(`${fieldName} must be a non-negative number`);
-    }
-    return num;
-  }
-};
-
-// src/ui/buffer-calc-ui.ts
 var BufferCalcUI = class {
   constructor(container, blockContent, calculationEngine, reagentDatabase, settings, context) {
     this.lastResult = null;
@@ -1421,32 +1600,44 @@ var BufferCalcUI = class {
     this.context = context;
   }
   async render() {
-    this.container.empty();
-    this.container.addClass("buffer-calc-ui");
-    switch (this.blockContent.type) {
-      case "buffer":
-        await this.renderBufferCalculator();
-        break;
-      case "stock":
-        await this.renderStockCalculator();
-        break;
-      case "dilution":
-        await this.renderDilutionCalculator();
-        break;
-      default:
-        this.container.createEl("div", {
-          text: `Unknown calculation type: ${this.blockContent.type}`,
-          cls: "buffer-calc-error"
-        });
+    try {
+      this.container.empty();
+      this.container.addClass("buffer-calc-ui");
+      console.log(`Rendering UI for type: ${this.blockContent.type}`, this.blockContent);
+      switch (this.blockContent.type) {
+        case "buffer":
+          await this.renderBufferCalculator();
+          break;
+        case "stock":
+          console.log("Rendering stock calculator...");
+          await this.renderStockCalculator();
+          break;
+        case "dilution":
+          console.log("Rendering dilution calculator...");
+          await this.renderDilutionCalculator();
+          break;
+        default:
+          this.container.createEl("div", {
+            text: `Unknown calculation type: ${this.blockContent.type}`,
+            cls: "buffer-calc-error"
+          });
+      }
+      console.log(`UI rendering completed for type: ${this.blockContent.type}`);
+    } catch (error) {
+      console.error(`UI rendering error for type ${this.blockContent.type}:`, error);
+      this.container.createEl("div", {
+        text: `\u30A8\u30E9\u30FC: ${error.message}`,
+        cls: "buffer-calc-error"
+      });
     }
   }
   async renderBufferCalculator() {
     const data = this.blockContent.data;
     const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-    header.createEl("h3", { text: data.name || "Buffer Calculation", cls: "buffer-calc-title" });
+    header.createEl("h3", { text: data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97", cls: "buffer-calc-title" });
     const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
     const volumeContainer = controls.createEl("div", { cls: "buffer-calc-volume-input" });
-    volumeContainer.createEl("label", { text: "Total Volume:" });
+    volumeContainer.createEl("label", { text: "\u7DCF\u4F53\u7A4D:" });
     const volumeInput = volumeContainer.createEl("input", {
       type: "number",
       value: data.totalVolume.toString(),
@@ -1457,14 +1648,14 @@ var BufferCalcUI = class {
     volumeInput.addEventListener("input", () => this.updateCalculation());
     volumeUnitSelect.addEventListener("change", () => this.updateCalculation());
     const componentsContainer = this.container.createEl("div", { cls: "buffer-calc-components" });
-    componentsContainer.createEl("h4", { text: "Components" });
+    componentsContainer.createEl("h4", { text: "\u6210\u5206" });
     const componentsList = componentsContainer.createEl("div", { cls: "buffer-calc-components-list" });
     const components = Array.isArray(data.components) ? data.components : [];
     components.forEach((component, index) => {
       this.renderComponent(componentsList, component, index);
     });
     const addButton = componentsContainer.createEl("button", {
-      text: "+ Add Component",
+      text: "+ \u6210\u5206\u3092\u8FFD\u52A0",
       cls: "buffer-calc-add-button mod-cta"
     });
     addButton.addEventListener("click", () => {
@@ -1488,7 +1679,7 @@ var BufferCalcUI = class {
   renderComponent(container, component, index) {
     const componentEl = container.createEl("div", { cls: "buffer-calc-component" });
     const componentHeader = componentEl.createEl("div", { cls: "buffer-calc-component-header" });
-    componentHeader.createEl("span", { text: `Component ${index + 1}` });
+    componentHeader.createEl("span", { text: `\u6210\u5206 ${index + 1}` });
     const deleteButton = componentHeader.createEl("button", {
       text: "\xD7",
       cls: "buffer-calc-delete-button"
@@ -1501,11 +1692,11 @@ var BufferCalcUI = class {
       this.render();
     });
     const nameContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
-    nameContainer.createEl("label", { text: "Reagent:" });
+    nameContainer.createEl("label", { text: "\u8A66\u85AC:" });
     const nameInput = nameContainer.createEl("input", {
       type: "text",
       value: component.name,
-      placeholder: "Enter reagent name...",
+      placeholder: "\u8A66\u85AC\u540D\u3092\u5165\u529B...",
       cls: "buffer-calc-reagent-input"
     });
     const suggestionsContainer = nameContainer.createEl("div", {
@@ -1522,7 +1713,7 @@ var BufferCalcUI = class {
       this.updateCalculation();
     });
     const stockContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
-    stockContainer.createEl("label", { text: "Stock Concentration:" });
+    stockContainer.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:" });
     const stockInput = stockContainer.createEl("input", {
       type: "number",
       value: component.stockConc.toString(),
@@ -1539,7 +1730,7 @@ var BufferCalcUI = class {
       this.updateCalculation();
     });
     const finalContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
-    finalContainer.createEl("label", { text: "Final Concentration:" });
+    finalContainer.createEl("label", { text: "\u6700\u7D42\u6FC3\u5EA6:" });
     const finalInput = finalContainer.createEl("input", {
       type: "number",
       value: component.finalConc.toString(),
@@ -1556,11 +1747,11 @@ var BufferCalcUI = class {
       this.updateCalculation();
     });
     const lotContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
-    lotContainer.createEl("label", { text: "Lot # (optional):" });
+    lotContainer.createEl("label", { text: "\u30ED\u30C3\u30C8\u756A\u53F7\uFF08\u4EFB\u610F\uFF09:" });
     const lotInput = lotContainer.createEl("input", {
       type: "text",
       value: component.lotNumber || "",
-      placeholder: "e.g., ABC123",
+      placeholder: "\u4F8B: ABC123",
       cls: "buffer-calc-lot-input"
     });
     lotInput.addEventListener("input", () => {
@@ -1664,7 +1855,7 @@ var BufferCalcUI = class {
     resultsContainer.empty();
     if (result.errors.length > 0) {
       const errorsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-errors" });
-      errorsContainer.createEl("h4", { text: "Errors", cls: "buffer-calc-error-title" });
+      errorsContainer.createEl("h4", { text: "\u30A8\u30E9\u30FC", cls: "buffer-calc-error-title" });
       result.errors.forEach((error) => {
         errorsContainer.createEl("div", {
           text: error.message,
@@ -1673,7 +1864,7 @@ var BufferCalcUI = class {
       });
       return;
     }
-    resultsContainer.createEl("h4", { text: "Preparation Instructions" });
+    resultsContainer.createEl("h4", { text: "\u8ABF\u88FD\u624B\u9806" });
     if (result.components.length > 0) {
       const instructionsList = resultsContainer.createEl("ol", { cls: "buffer-calc-instructions" });
       result.components.forEach((component, index) => {
@@ -1681,7 +1872,7 @@ var BufferCalcUI = class {
         const reagentInfo = this.reagentDatabase.getReagentByName(component.reagent.name);
         const displayVolume = component.optimizedVolumeDisplay;
         instruction.createEl("strong", { text: component.reagent.name });
-        instruction.createEl("span", { text: `: Add ${displayVolume}` });
+        instruction.createEl("span", { text: `: ${displayVolume} \u3092\u6DFB\u52A0` });
         if (component.percentOfTotal) {
           instruction.createEl("span", {
             text: ` (${component.percentOfTotal.toFixed(1)}%)`,
@@ -1711,14 +1902,14 @@ var BufferCalcUI = class {
         const data = this.blockContent.data;
         const solventDisplay = ConversionUtils.optimizeVolumeDisplay(result.solventVolume, data.volumeUnit || this.settings.defaultVolumeUnit);
         console.log("- Solvent display:", solventDisplay);
-        solventInstruction.createEl("span", { text: `Add water or buffer to make up to total volume: ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit}` });
+        solventInstruction.createEl("span", { text: `\u6C34\u307E\u305F\u306F\u30D0\u30C3\u30D5\u30A1\u30FC\u3092\u52A0\u3048\u3066\u7DCF\u4F53\u7A4D\u3092 ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit} \u306B\u3059\u308B` });
       } else {
         console.log("- Solvent instruction NOT added (volume <= 0)");
       }
     }
     if (result.warnings.length > 0) {
       const warningsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-warnings" });
-      warningsContainer.createEl("h5", { text: "Warnings" });
+      warningsContainer.createEl("h5", { text: "\u8B66\u544A" });
       result.warnings.forEach((warning) => {
         const warningEl = warningsContainer.createEl("div", {
           text: warning.message,
@@ -1728,7 +1919,7 @@ var BufferCalcUI = class {
     }
     if (this.settings.showCalculationSteps && result.calculationSteps && result.calculationSteps.length > 0) {
       const stepsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-steps" });
-      stepsContainer.createEl("h5", { text: "Calculation Steps" });
+      stepsContainer.createEl("h5", { text: "\u8A08\u7B97\u30B9\u30C6\u30C3\u30D7" });
       result.calculationSteps.forEach((step) => {
         const stepEl = stepsContainer.createEl("div", { cls: "buffer-calc-step" });
         stepEl.createEl("strong", { text: `${step.step}. ${step.description}` });
@@ -1739,13 +1930,13 @@ var BufferCalcUI = class {
           });
         }
         stepEl.createEl("div", {
-          text: `Result: ${step.result.toFixed(this.settings.decimalPlaces)} ${step.unit}`,
+          text: `\u7D50\u679C: ${step.result.toFixed(this.settings.decimalPlaces)} ${step.unit}`,
           cls: "buffer-calc-step-result"
         });
       });
     }
     const exportButton = resultsContainer.createEl("button", {
-      text: "Export Recipe",
+      text: "\u30EC\u30B7\u30D4\u3092\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8",
       cls: "buffer-calc-export-button"
     });
     exportButton.addEventListener("click", () => {
@@ -1764,30 +1955,211 @@ var BufferCalcUI = class {
     });
   }
   async renderStockCalculator() {
-    this.container.createEl("div", {
-      text: "Stock solution calculator - Implementation coming soon",
-      cls: "buffer-calc-placeholder"
-    });
+    var _a, _b;
+    try {
+      const data = this.blockContent.data;
+      console.log("Stock calculator - Starting render with data:", data);
+      const header = this.container.createEl("div", { cls: "buffer-calc-header" });
+      header.createEl("h3", { text: data.name || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97", cls: "buffer-calc-title" });
+      const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
+      const reagentContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      reagentContainer.createEl("label", { text: "\u8A66\u85AC\u540D:" });
+      const reagentInput = reagentContainer.createEl("input", {
+        type: "text",
+        value: data.reagentName || "",
+        placeholder: "\u8A66\u85AC\u540D\u3092\u5165\u529B...",
+        cls: "buffer-calc-reagent-input"
+      });
+      const suggestionsContainer = reagentContainer.createEl("div", {
+        cls: "buffer-calc-suggestions"
+      });
+      suggestionsContainer.style.display = "none";
+      reagentInput.addEventListener("input", () => {
+        data.reagentName = reagentInput.value;
+        this.updateStockCalculation();
+      });
+      const mwContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      mwContainer.createEl("label", { text: "\u5206\u5B50\u91CF (g/mol):" });
+      const mwInput = mwContainer.createEl("input", {
+        type: "number",
+        value: ((_a = data.molecularWeight) == null ? void 0 : _a.toString()) || "",
+        placeholder: "\u4F8B: 58.44",
+        cls: "buffer-calc-input-number"
+      });
+      mwInput.addEventListener("input", () => {
+        data.molecularWeight = parseFloat(mwInput.value) || void 0;
+        this.updateStockCalculation();
+      });
+      this.setupReagentAutocomplete(reagentInput, suggestionsContainer, (reagent) => {
+        data.reagentName = reagent.name;
+        reagentInput.value = reagent.name;
+        if (reagent.molecularWeight) {
+          data.molecularWeight = reagent.molecularWeight;
+          mwInput.value = reagent.molecularWeight.toString();
+        }
+        this.updateStockCalculation();
+      });
+      const concContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      concContainer.createEl("label", { text: "\u76EE\u6A19\u6FC3\u5EA6:" });
+      const concInput = concContainer.createEl("input", {
+        type: "number",
+        value: data.targetConcentration.toString(),
+        cls: "buffer-calc-input-number"
+      });
+      const concUnitSelect = concContainer.createEl("select", { cls: "buffer-calc-unit-select" });
+      this.populateConcentrationUnits(concUnitSelect, data.concentrationUnit);
+      concInput.addEventListener("input", () => {
+        data.targetConcentration = parseFloat(concInput.value) || 0;
+        this.updateStockCalculation();
+      });
+      concUnitSelect.addEventListener("change", () => {
+        data.concentrationUnit = concUnitSelect.value;
+        this.updateStockCalculation();
+      });
+      const volumeContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      volumeContainer.createEl("label", { text: "\u4F53\u7A4D:" });
+      const volumeInput = volumeContainer.createEl("input", {
+        type: "number",
+        value: data.volume.toString(),
+        cls: "buffer-calc-input-number"
+      });
+      const volumeUnitSelect = volumeContainer.createEl("select", { cls: "buffer-calc-unit-select" });
+      this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit);
+      volumeInput.addEventListener("input", () => {
+        data.volume = parseFloat(volumeInput.value) || 0;
+        this.updateStockCalculation();
+      });
+      volumeUnitSelect.addEventListener("change", () => {
+        data.volumeUnit = volumeUnitSelect.value;
+        this.updateStockCalculation();
+      });
+      const purityContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      purityContainer.createEl("label", { text: "\u7D14\u5EA6 (%, \u4EFB\u610F):" });
+      const purityInput = purityContainer.createEl("input", {
+        type: "number",
+        value: ((_b = data.purity) == null ? void 0 : _b.toString()) || "100",
+        placeholder: "100",
+        cls: "buffer-calc-input-number"
+      });
+      purityInput.setAttribute("min", "0");
+      purityInput.setAttribute("max", "100");
+      purityInput.addEventListener("input", () => {
+        const purity = parseFloat(purityInput.value);
+        data.purity = purity > 0 && purity <= 100 ? purity : void 0;
+        this.updateStockCalculation();
+      });
+      const solventContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      solventContainer.createEl("label", { text: "\u6EB6\u5A92 (\u4EFB\u610F):" });
+      const solventInput = solventContainer.createEl("input", {
+        type: "text",
+        value: data.solvent || "\u6C34",
+        placeholder: "\u6C34",
+        cls: "buffer-calc-input-text"
+      });
+      solventInput.addEventListener("input", () => {
+        data.solvent = solventInput.value;
+        this.updateStockCalculation();
+      });
+      const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+      this.updateStockCalculation();
+      console.log("Stock calculator - Render completed successfully");
+    } catch (error) {
+      console.error("Stock calculator render error:", error);
+      this.container.createEl("div", {
+        text: `Stock calculator error: ${error.message}`,
+        cls: "buffer-calc-error"
+      });
+    }
   }
   async renderDilutionCalculator() {
-    this.container.createEl("div", {
-      text: "Dilution calculator - Implementation coming soon",
-      cls: "buffer-calc-placeholder"
-    });
+    try {
+      const data = this.blockContent.data;
+      console.log("Dilution calculator - Starting render with data:", data);
+      const header = this.container.createEl("div", { cls: "buffer-calc-header" });
+      header.createEl("h3", { text: data.name || "\u5E0C\u91C8\u8A08\u7B97", cls: "buffer-calc-title" });
+      const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
+      const stockConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      stockConcContainer.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:" });
+      const stockConcInput = stockConcContainer.createEl("input", {
+        type: "number",
+        value: data.stockConcentration.toString(),
+        cls: "buffer-calc-input-number"
+      });
+      const stockConcUnitSelect = stockConcContainer.createEl("select", { cls: "buffer-calc-unit-select" });
+      this.populateConcentrationUnits(stockConcUnitSelect, data.stockConcentrationUnit);
+      stockConcInput.addEventListener("input", () => {
+        data.stockConcentration = parseFloat(stockConcInput.value) || 0;
+        this.updateDilutionCalculation();
+      });
+      stockConcUnitSelect.addEventListener("change", () => {
+        data.stockConcentrationUnit = stockConcUnitSelect.value;
+        this.updateDilutionCalculation();
+      });
+      const finalConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      finalConcContainer.createEl("label", { text: "\u6700\u7D42\u6FC3\u5EA6:" });
+      const finalConcInput = finalConcContainer.createEl("input", {
+        type: "number",
+        value: data.finalConcentration.toString(),
+        cls: "buffer-calc-input-number"
+      });
+      const finalConcUnitSelect = finalConcContainer.createEl("select", { cls: "buffer-calc-unit-select" });
+      this.populateConcentrationUnits(finalConcUnitSelect, data.finalConcentrationUnit);
+      finalConcInput.addEventListener("input", () => {
+        data.finalConcentration = parseFloat(finalConcInput.value) || 0;
+        this.updateDilutionCalculation();
+      });
+      finalConcUnitSelect.addEventListener("change", () => {
+        data.finalConcentrationUnit = finalConcUnitSelect.value;
+        this.updateDilutionCalculation();
+      });
+      const finalVolumeContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      finalVolumeContainer.createEl("label", { text: "\u6700\u7D42\u4F53\u7A4D:" });
+      const finalVolumeInput = finalVolumeContainer.createEl("input", {
+        type: "number",
+        value: data.finalVolume.toString(),
+        cls: "buffer-calc-input-number"
+      });
+      const finalVolumeUnitSelect = finalVolumeContainer.createEl("select", { cls: "buffer-calc-unit-select" });
+      this.populateVolumeUnits(finalVolumeUnitSelect, data.volumeUnit);
+      finalVolumeInput.addEventListener("input", () => {
+        data.finalVolume = parseFloat(finalVolumeInput.value) || 0;
+        this.updateDilutionCalculation();
+      });
+      finalVolumeUnitSelect.addEventListener("change", () => {
+        data.volumeUnit = finalVolumeUnitSelect.value;
+        this.updateDilutionCalculation();
+      });
+      const dilutionFactorContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
+      dilutionFactorContainer.createEl("label", { text: "\u5E0C\u91C8\u500D\u7387 (\u81EA\u52D5\u8A08\u7B97):" });
+      const dilutionFactorDisplay = dilutionFactorContainer.createEl("span", {
+        text: "---",
+        cls: "buffer-calc-calculated-value"
+      });
+      const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+      this.dilutionFactorDisplay = dilutionFactorDisplay;
+      this.updateDilutionCalculation();
+      console.log("Dilution calculator - Render completed successfully");
+    } catch (error) {
+      console.error("Dilution calculator render error:", error);
+      this.container.createEl("div", {
+        text: `Dilution calculator error: ${error.message}`,
+        cls: "buffer-calc-error"
+      });
+    }
   }
   exportRecipe(result) {
     if (!result || result.components.length === 0) {
-      new import_obsidian2.Notice("No calculation results to export");
+      new import_obsidian2.Notice("\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8\u3059\u308B\u8A08\u7B97\u7D50\u679C\u304C\u3042\u308A\u307E\u305B\u3093");
       return;
     }
     const data = this.blockContent.data;
-    let exportText = `# ${data.name || "Buffer Recipe"}
+    let exportText = `# ${data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u30EC\u30B7\u30D4"}
 
 `;
-    exportText += `**Total Volume:** ${data.totalVolume} ${data.volumeUnit || this.settings.defaultVolumeUnit}
+    exportText += `**\u7DCF\u4F53\u7A4D:** ${data.totalVolume} ${data.volumeUnit || this.settings.defaultVolumeUnit}
 
 `;
-    exportText += `## Components
+    exportText += `## \u6210\u5206
 
 `;
     result.components.forEach((component, index) => {
@@ -1797,12 +2169,12 @@ var BufferCalcUI = class {
       }
       exportText += `
 `;
-      exportText += `   - Stock: ${component.stockConcentration} ${component.stockConcentrationUnit}
+      exportText += `   - \u30B9\u30C8\u30C3\u30AF: ${component.stockConcentration} ${component.stockConcentrationUnit}
 `;
-      exportText += `   - Final: ${component.finalConcentration} ${component.finalConcentrationUnit}
+      exportText += `   - \u6700\u7D42: ${component.finalConcentration} ${component.finalConcentrationUnit}
 `;
       if (component.lotNumber) {
-        exportText += `   - Lot: ${component.lotNumber}
+        exportText += `   - \u30ED\u30C3\u30C8: ${component.lotNumber}
 `;
       }
       exportText += `
@@ -1810,12 +2182,12 @@ var BufferCalcUI = class {
     });
     if (result.solventVolume > 0) {
       const solventDisplay = ConversionUtils.optimizeVolumeDisplay(result.solventVolume, data.volumeUnit || this.settings.defaultVolumeUnit);
-      exportText += `**Solvent**: Add water to ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit}
+      exportText += `**\u6EB6\u5A92**: \u6C34\u3092\u52A0\u3048\u3066 ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit} \u306B\u3059\u308B
 
 `;
     }
     if (result.warnings.length > 0) {
-      exportText += `## Warnings
+      exportText += `## \u8B66\u544A
 
 `;
       result.warnings.forEach((warning) => {
@@ -1825,13 +2197,165 @@ var BufferCalcUI = class {
       exportText += `
 `;
     }
-    exportText += `*Generated by Buffer Calc on ${new Date().toLocaleDateString()}*
+    exportText += `*Buffer Calc \u306B\u3088\u308A ${new Date().toLocaleDateString()} \u306B\u751F\u6210*
 `;
     navigator.clipboard.writeText(exportText).then(() => {
-      new import_obsidian2.Notice("Recipe exported to clipboard");
+      new import_obsidian2.Notice("\u30EC\u30B7\u30D4\u3092\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u306B\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8\u3057\u307E\u3057\u305F");
     }).catch(() => {
-      new import_obsidian2.Notice("Failed to copy recipe to clipboard");
+      new import_obsidian2.Notice("\u30EC\u30B7\u30D4\u306E\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u3078\u306E\u30B3\u30D4\u30FC\u306B\u5931\u6557\u3057\u307E\u3057\u305F");
     });
+  }
+  async updateStockCalculation() {
+    const data = this.blockContent.data;
+    console.log("Updating stock calculation with data:", data);
+    try {
+      const result = this.calculationEngine.calculateStock(data);
+      console.log("Stock calculation result:", result);
+      this.lastResult = result;
+      this.renderStockResults(result);
+    } catch (error) {
+      console.error("Stock calculation error:", error);
+      console.error("Error stack:", error.stack);
+      this.renderError(error.message);
+    }
+  }
+  async updateDilutionCalculation() {
+    const data = this.blockContent.data;
+    console.log("Updating dilution calculation with data:", data);
+    try {
+      const result = this.calculationEngine.calculateDilution(data);
+      console.log("Dilution calculation result:", result);
+      this.lastResult = result;
+      if (this.dilutionFactorDisplay && data.stockConcentration > 0 && data.finalConcentration > 0) {
+        const dilutionFactor = data.stockConcentration / data.finalConcentration;
+        this.dilutionFactorDisplay.textContent = `${dilutionFactor.toFixed(1)}\xD7`;
+      }
+      this.renderDilutionResults(result);
+    } catch (error) {
+      console.error("Dilution calculation error:", error);
+      console.error("Error stack:", error.stack);
+      this.renderError(error.message);
+    }
+  }
+  renderStockResults(result) {
+    let resultsContainer = this.container.querySelector(".buffer-calc-results");
+    if (!resultsContainer) {
+      resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+    }
+    resultsContainer.empty();
+    if (result.errors.length > 0) {
+      const errorsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-errors" });
+      errorsContainer.createEl("h4", { text: "\u30A8\u30E9\u30FC", cls: "buffer-calc-error-title" });
+      result.errors.forEach((error) => {
+        errorsContainer.createEl("div", {
+          text: error.message,
+          cls: "buffer-calc-error-item"
+        });
+      });
+      return;
+    }
+    resultsContainer.createEl("h4", { text: "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8ABF\u88FD\u624B\u9806" });
+    if (result.components.length > 0) {
+      const instructionsList = resultsContainer.createEl("ol", { cls: "buffer-calc-instructions" });
+      const component = result.components[0];
+      const massInstruction = instructionsList.createEl("li", { cls: "buffer-calc-instruction-item" });
+      massInstruction.createEl("strong", { text: component.reagent.name });
+      massInstruction.createEl("span", { text: `: ${component.optimizedVolumeDisplay} \u3092\u8A08\u91CF` });
+      const dissolutionInstruction = instructionsList.createEl("li", { cls: "buffer-calc-instruction-item" });
+      const data = this.blockContent.data;
+      const solventName = data.solvent || "\u84B8\u7559\u6C34";
+      dissolutionInstruction.createEl("span", {
+        text: `${solventName}\u306B\u6EB6\u89E3\u3057\u3001\u7DCF\u4F53\u7A4D\u3092 ${data.volume} ${data.volumeUnit} \u306B\u30E1\u30B9\u30A2\u30C3\u30D7\u3059\u308B`
+      });
+    }
+    if (this.settings.showCalculationSteps && result.calculationSteps && result.calculationSteps.length > 0) {
+      const stepsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-steps" });
+      stepsContainer.createEl("h5", { text: "\u8A08\u7B97\u30B9\u30C6\u30C3\u30D7" });
+      result.calculationSteps.forEach((step) => {
+        const stepEl = stepsContainer.createEl("div", { cls: "buffer-calc-step" });
+        stepEl.createEl("strong", { text: `${step.step}. ${step.description}` });
+        if (step.formula) {
+          stepEl.createEl("div", {
+            text: step.formula,
+            cls: "buffer-calc-formula"
+          });
+        }
+        stepEl.createEl("div", {
+          text: `\u7D50\u679C: ${step.result.toFixed(this.settings.decimalPlaces)} ${step.unit}`,
+          cls: "buffer-calc-step-result"
+        });
+      });
+    }
+    if (result.warnings.length > 0) {
+      const warningsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-warnings" });
+      warningsContainer.createEl("h5", { text: "\u8B66\u544A" });
+      result.warnings.forEach((warning) => {
+        const warningEl = warningsContainer.createEl("div", {
+          text: warning.message,
+          cls: `buffer-calc-warning buffer-calc-warning-${warning.severity}`
+        });
+      });
+    }
+  }
+  renderDilutionResults(result) {
+    let resultsContainer = this.container.querySelector(".buffer-calc-results");
+    if (!resultsContainer) {
+      resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+    }
+    resultsContainer.empty();
+    if (result.errors.length > 0) {
+      const errorsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-errors" });
+      errorsContainer.createEl("h4", { text: "\u30A8\u30E9\u30FC", cls: "buffer-calc-error-title" });
+      result.errors.forEach((error) => {
+        errorsContainer.createEl("div", {
+          text: error.message,
+          cls: "buffer-calc-error-item"
+        });
+      });
+      return;
+    }
+    resultsContainer.createEl("h4", { text: "\u5E0C\u91C8\u624B\u9806" });
+    if (result.components.length > 0) {
+      const instructionsList = resultsContainer.createEl("ol", { cls: "buffer-calc-instructions" });
+      const component = result.components[0];
+      const data = this.blockContent.data;
+      const stockInstruction = instructionsList.createEl("li", { cls: "buffer-calc-instruction-item" });
+      stockInstruction.createEl("span", { text: `\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2: ${component.optimizedVolumeDisplay} \u3092\u53D6\u308B` });
+      const solventInstruction = instructionsList.createEl("li", { cls: "buffer-calc-instruction-item" });
+      const solventVolume = result.solventVolume;
+      const solventDisplay = ConversionUtils.optimizeVolumeDisplay(solventVolume, data.volumeUnit);
+      solventInstruction.createEl("span", {
+        text: `\u6EB6\u5A92\u3092\u52A0\u3048\u3066\u7DCF\u4F53\u7A4D\u3092 ${data.finalVolume} ${data.volumeUnit} \u306B\u3059\u308B\uFF08\u6EB6\u5A92: ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit}\uFF09`
+      });
+    }
+    if (this.settings.showCalculationSteps && result.calculationSteps && result.calculationSteps.length > 0) {
+      const stepsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-steps" });
+      stepsContainer.createEl("h5", { text: "\u8A08\u7B97\u30B9\u30C6\u30C3\u30D7" });
+      result.calculationSteps.forEach((step) => {
+        const stepEl = stepsContainer.createEl("div", { cls: "buffer-calc-step" });
+        stepEl.createEl("strong", { text: `${step.step}. ${step.description}` });
+        if (step.formula) {
+          stepEl.createEl("div", {
+            text: step.formula,
+            cls: "buffer-calc-formula"
+          });
+        }
+        stepEl.createEl("div", {
+          text: `\u7D50\u679C: ${step.result.toFixed(this.settings.decimalPlaces)} ${step.unit}`,
+          cls: "buffer-calc-step-result"
+        });
+      });
+    }
+    if (result.warnings.length > 0) {
+      const warningsContainer = resultsContainer.createEl("div", { cls: "buffer-calc-warnings" });
+      warningsContainer.createEl("h5", { text: "\u8B66\u544A" });
+      result.warnings.forEach((warning) => {
+        const warningEl = warningsContainer.createEl("div", {
+          text: warning.message,
+          cls: `buffer-calc-warning buffer-calc-warning-${warning.severity}`
+        });
+      });
+    }
   }
 };
 
@@ -1851,6 +2375,11 @@ var BufferCalcPlugin = class extends import_obsidian3.Plugin {
     this.registerMarkdownCodeBlockProcessor(
       "buffer-calc",
       this.bufferCalcBlockHandler.bind(this, "buffer"),
+      100
+    );
+    this.registerMarkdownCodeBlockProcessor(
+      "stock",
+      this.bufferCalcBlockHandler.bind(this, "stock"),
       100
     );
     this.registerMarkdownCodeBlockProcessor(
@@ -1923,7 +2452,7 @@ var BufferCalcPlugin = class extends import_obsidian3.Plugin {
   }
   parseBlockContent(blockType, source) {
     try {
-      console.log("Parsing block source:", source);
+      console.log(`Parsing ${blockType} block source:`, source);
       if (!source.trim()) {
         console.log("Empty source, using default content");
         return this.getDefaultBlockContent(blockType);
@@ -1942,12 +2471,18 @@ var BufferCalcPlugin = class extends import_obsidian3.Plugin {
         }
       }
       console.log("Parsed data:", parsedData);
-      console.log("Components type:", typeof parsedData.components, Array.isArray(parsedData.components));
-      return {
+      console.log("Data type:", typeof parsedData);
+      console.log("Data keys:", Object.keys(parsedData));
+      if (parsedData.components) {
+        console.log("Components type:", typeof parsedData.components, Array.isArray(parsedData.components));
+      }
+      const result = {
         type: blockType,
         data: parsedData,
         options: parsedData.options || {}
       };
+      console.log(`Final parsed block content for ${blockType}:`, result);
+      return result;
     } catch (error) {
       console.error("Error parsing block content:", error);
       return this.getDefaultBlockContent(blockType);
@@ -2024,15 +2559,18 @@ var BufferCalcPlugin = class extends import_obsidian3.Plugin {
       volumeUnit: this.settings.defaultVolumeUnit,
       components: []
     } : blockType === "stock" ? {
-      reagent: "",
+      reagentName: "",
       targetConcentration: 100,
       concentrationUnit: this.settings.defaultConcentrationUnit,
       volume: 10,
       volumeUnit: this.settings.defaultVolumeUnit
     } : {
-      initialConcentration: 1e3,
-      initialUnit: this.settings.defaultConcentrationUnit,
-      steps: []
+      stockConcentration: 1e3,
+      stockConcentrationUnit: this.settings.defaultConcentrationUnit,
+      finalConcentration: 100,
+      finalConcentrationUnit: this.settings.defaultConcentrationUnit,
+      finalVolume: 100,
+      volumeUnit: this.settings.defaultVolumeUnit
     };
     return {
       type: blockType,

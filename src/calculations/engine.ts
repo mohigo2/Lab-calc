@@ -19,6 +19,8 @@ import {
 	CONCENTRATION_CONVERSION_FACTORS
 } from '../types';
 
+import { ConversionUtils } from '../utils/conversions';
+
 export class CalculationEngine {
 	private settings: BufferCalcSettings;
 
@@ -80,7 +82,7 @@ export class CalculationEngine {
 			} catch (error) {
 				errors.push({
 					type: ErrorType.CALCULATION_ERROR,
-					message: `Error calculating component ${component.name}: ${error.message}`,
+					message: `成分 ${component.name} の計算エラー: ${error.message}`,
 					componentIndex: index
 				});
 			}
@@ -112,7 +114,7 @@ export class CalculationEngine {
 		if (solventVolumeL < 0) {
 			warnings.push({
 				type: WarningType.VOLUME_OVERFLOW,
-				message: 'Component volumes exceed total volume. Consider increasing total volume.',
+				message: '成分の体積が総体積を超えています。総体積を増やすことを検討してください。',
 				severity: 'high'
 			});
 		}
@@ -121,7 +123,7 @@ export class CalculationEngine {
 		if (solventVolumeL < totalVolumeL * 0.1) {
 			warnings.push({
 				type: WarningType.SMALL_VOLUME,
-				message: 'Solvent volume is very small. Consider reducing component concentrations.',
+				message: '溶媒の体積が非常に小さくなっています。成分濃度を下げることを検討してください。',
 				severity: 'medium'
 			});
 		}
@@ -163,7 +165,7 @@ export class CalculationEngine {
 
 		// Check for impossible concentration
 		if (finalConcM > stockConcM) {
-			throw new Error(`Final concentration (${component.finalConc} ${component.finalUnit}) cannot be higher than stock concentration (${component.stockConc} ${component.stockUnit})`);
+			throw new Error(`最終濃度 (${component.finalConc} ${component.finalUnit}) はストック濃度 (${component.stockConc} ${component.stockUnit}) より高くすることはできません`);
 		}
 
 		// Calculate required volume using C1V1 = C2V2
@@ -228,7 +230,7 @@ export class CalculationEngine {
 		if (!data.molecularWeight || data.molecularWeight <= 0) {
 			errors.push({
 				type: ErrorType.INVALID_MOLECULAR_WEIGHT,
-				message: 'Valid molecular weight is required for stock solution calculation',
+				message: 'ストック溶液計算には有効な分子量が必要です',
 				field: 'molecularWeight'
 			});
 		}
@@ -237,7 +239,7 @@ export class CalculationEngine {
 			return {
 				recipe: {
 					id: '',
-					name: `${data.reagent} Stock Solution`,
+					name: `${data.reagentName} ストック溶液`,
 					totalVolume: data.volume,
 					totalVolumeUnit: data.volumeUnit,
 					components: [],
@@ -277,8 +279,8 @@ export class CalculationEngine {
 		if (this.settings.showCalculationSteps) {
 			calculationSteps.push({
 				step: 1,
-				description: 'Calculate required mass',
-				formula: `Mass = Concentration × Volume × Molecular Weight = ${concentrationM} mol/L × ${volumeL} L × ${data.molecularWeight} g/mol`,
+				description: '必要質量を計算',
+				formula: `質量 = 濃度 × 体積 × 分子量 = ${concentrationM} mol/L × ${volumeL} L × ${data.molecularWeight} g/mol`,
 				result: massG,
 				unit: MassUnit.GRAM
 			});
@@ -286,8 +288,8 @@ export class CalculationEngine {
 			if (data.purity && data.purity !== 100) {
 				calculationSteps.push({
 					step: 2,
-					description: 'Adjust for purity',
-					formula: `Adjusted mass = ${massG} g / (${data.purity}% / 100%)`,
+					description: '純度補正',
+					formula: `補正質量 = ${massG} g / (${data.purity}% / 100%)`,
 					result: massG / (data.purity / 100),
 					unit: MassUnit.GRAM
 				});
@@ -298,7 +300,7 @@ export class CalculationEngine {
 		if (massG < 0.001) {
 			warnings.push({
 				type: WarningType.SMALL_VOLUME,
-				message: 'Very small mass required. Consider making a more dilute stock solution.',
+				message: '非常に小さい質量が必要です。より希薄なストック溶液の作成を検討してください。',
 				severity: 'medium'
 			});
 		}
@@ -306,14 +308,14 @@ export class CalculationEngine {
 		if (massG > 10) {
 			warnings.push({
 				type: WarningType.LARGE_VOLUME,
-				message: 'Large mass required. Consider making a smaller volume or more concentrated stock.',
+				message: '大きい質量が必要です。より小さい体積またはより濃縮されたストックの作成を検討してください。',
 				severity: 'low'
 			});
 		}
 
 		const component: CalculatedComponent = {
 			reagent: {
-				name: data.reagent,
+				name: data.reagentName,
 				molecularWeight: data.molecularWeight!
 			},
 			stockConcentration: data.targetConcentration,
@@ -331,7 +333,7 @@ export class CalculationEngine {
 		return {
 			recipe: {
 				id: '',
-				name: `${data.reagent} Stock Solution`,
+				name: `${data.reagentName} ストック溶液`,
 				totalVolume: data.volume,
 				totalVolumeUnit: data.volumeUnit,
 				components: [component],
@@ -493,6 +495,218 @@ export class CalculationEngine {
 			components: [],
 			createdAt: new Date(),
 			updatedAt: new Date()
+		};
+	}
+
+	calculateDilution(data: DilutionData): CalculationResult {
+		console.log('calculateDilution called with data:', data);
+		const errors: ValidationError[] = [];
+		const warnings: Warning[] = [];
+		const calculationSteps: CalculationStep[] = [];
+
+		// Convert string values to numbers if needed
+		const stockConcentration = Number(data.stockConcentration);
+		const finalConcentration = Number(data.finalConcentration);
+		const finalVolume = Number(data.finalVolume);
+		
+		console.log('Converted values:', {
+			stockConcentration,
+			finalConcentration, 
+			finalVolume,
+			originalTypes: {
+				stockConcentration: typeof data.stockConcentration,
+				finalConcentration: typeof data.finalConcentration,
+				finalVolume: typeof data.finalVolume
+			}
+		});
+
+		// Validate input
+		console.log('Validating stockConcentration:', stockConcentration, typeof stockConcentration);
+		if (stockConcentration <= 0 || isNaN(stockConcentration)) {
+			console.log('Stock concentration validation failed');
+			errors.push({
+				type: ErrorType.INVALID_CONCENTRATION,
+				message: 'ストック濃度は0より大きい必要があります',
+				field: 'stockConcentration'
+			});
+		}
+
+		console.log('Validating finalConcentration:', finalConcentration, typeof finalConcentration);
+		if (finalConcentration <= 0 || isNaN(finalConcentration)) {
+			console.log('Final concentration validation failed');
+			errors.push({
+				type: ErrorType.INVALID_CONCENTRATION,
+				message: '最終濃度は0より大きい必要があります',
+				field: 'finalConcentration'
+			});
+		}
+
+		// Convert concentrations to same unit for comparison
+		const stockConcForComparison = this.convertConcentration(
+			stockConcentration,
+			data.stockConcentrationUnit,
+			ConcentrationUnit.MOLAR
+		);
+		const finalConcForComparison = this.convertConcentration(
+			finalConcentration,
+			data.finalConcentrationUnit,
+			ConcentrationUnit.MOLAR
+		);
+		
+		console.log('Checking concentration comparison after unit conversion:', {
+			finalConc: finalConcForComparison,
+			stockConc: stockConcForComparison,
+			originalFinal: finalConcentration,
+			originalStock: stockConcentration,
+			finalUnit: data.finalConcentrationUnit,
+			stockUnit: data.stockConcentrationUnit
+		});
+		
+		if (finalConcForComparison >= stockConcForComparison) {
+			console.log('Concentration comparison validation failed');
+			errors.push({
+				type: ErrorType.INVALID_CONCENTRATION,
+				message: '最終濃度はストック濃度より小さい必要があります',
+				field: 'finalConcentration'
+			});
+		}
+
+		console.log('Validating finalVolume:', finalVolume, typeof finalVolume);
+		if (finalVolume <= 0 || isNaN(finalVolume)) {
+			console.log('Final volume validation failed');
+			errors.push({
+				type: ErrorType.INVALID_VOLUME,
+				message: '最終体積は0より大きい必要があります',
+				field: 'finalVolume'
+			});
+		}
+
+		if (errors.length > 0) {
+			console.log('Validation errors found:', errors);
+			return {
+				recipe: {
+					id: '',
+					name: data.name || '希釈計算',
+					totalVolume: data.finalVolume,
+					totalVolumeUnit: data.volumeUnit,
+					components: [],
+					createdAt: new Date(),
+					updatedAt: new Date()
+				},
+				components: [],
+				solventVolume: 0,
+				warnings,
+				errors,
+				calculationSteps
+			};
+		}
+
+		// Convert concentrations to the same unit
+		const stockConcM = this.convertConcentration(
+			stockConcentration,
+			data.stockConcentrationUnit,
+			ConcentrationUnit.MOLAR
+		);
+
+		const finalConcM = this.convertConcentration(
+			finalConcentration,
+			data.finalConcentrationUnit,
+			ConcentrationUnit.MOLAR
+		);
+
+		// Convert volume to liters
+		const finalVolumeL = this.convertVolume(finalVolume, data.volumeUnit, VolumeUnit.LITER);
+
+		// Calculate dilution factor
+		const dilutionFactor = stockConcM / finalConcM;
+
+		// Calculate stock volume needed using C1V1 = C2V2
+		const stockVolumeNeededL = (finalConcM * finalVolumeL) / stockConcM;
+
+		// Calculate solvent volume
+		const solventVolumeL = finalVolumeL - stockVolumeNeededL;
+
+		// Convert back to display units
+		const stockVolumeNeeded = this.convertVolume(stockVolumeNeededL, VolumeUnit.LITER, data.volumeUnit);
+		const solventVolume = this.convertVolume(solventVolumeL, VolumeUnit.LITER, data.volumeUnit);
+
+		// Add calculation steps
+		if (this.settings.showCalculationSteps) {
+			calculationSteps.push({
+				step: 1,
+				description: '希釈倍率を計算',
+				formula: `希釈倍率 = ストック濃度 / 最終濃度 = ${stockConcM} M / ${finalConcM} M`,
+				result: dilutionFactor,
+				unit: ''
+			});
+
+			calculationSteps.push({
+				step: 2,
+				description: '必要なストック体積を計算 (C1V1 = C2V2)',
+				formula: `V1 = (C2 × V2) / C1 = (${finalConcM} M × ${finalVolumeL} L) / ${stockConcM} M`,
+				result: stockVolumeNeededL,
+				unit: VolumeUnit.LITER
+			});
+
+			calculationSteps.push({
+				step: 3,
+				description: '溶媒体積を計算',
+				formula: `溶媒体積 = 最終体積 - ストック体積 = ${finalVolumeL} L - ${stockVolumeNeededL} L`,
+				result: solventVolumeL,
+				unit: VolumeUnit.LITER
+			});
+		}
+
+		// Generate warnings
+		if (dilutionFactor < 2) {
+			warnings.push({
+				type: WarningType.SMALL_VOLUME,
+				message: '希釈倍率が小さすぎます。より大きな希釈倍率を検討してください。',
+				severity: 'medium'
+			});
+		}
+
+		if (stockVolumeNeededL < 0.001) {
+			warnings.push({
+				type: WarningType.SMALL_VOLUME,
+				message: '必要なストック体積が非常に小さいです。ピペッティングが困難な可能性があります。',
+				severity: 'medium'
+			});
+		}
+
+		const component: CalculatedComponent = {
+			reagent: {
+				name: data.name || '試薬',
+				molecularWeight: 0
+			},
+			stockConcentration: stockConcentration,
+			stockConcentrationUnit: data.stockConcentrationUnit,
+			finalConcentration: finalConcentration,
+			finalConcentrationUnit: data.finalConcentrationUnit,
+			volumeNeeded: stockVolumeNeededL,
+			volumeUnit: data.volumeUnit,
+			optimizedVolumeDisplay: (() => {
+				const optimized = ConversionUtils.optimizeVolumeDisplay(stockVolumeNeeded, data.volumeUnit);
+				return `${optimized.value.toFixed(this.settings.decimalPlaces)} ${optimized.unit}`;
+			})(),
+			percentOfTotal: (stockVolumeNeededL / finalVolumeL) * 100
+		};
+
+		return {
+			recipe: {
+				id: '',
+				name: data.name || '希釈計算',
+				totalVolume: finalVolume,
+				totalVolumeUnit: data.volumeUnit,
+				components: [component],
+				createdAt: new Date(),
+				updatedAt: new Date()
+			},
+			components: [component],
+			solventVolume: solventVolume,
+			warnings,
+			errors,
+			calculationSteps
 		};
 	}
 }

@@ -21,6 +21,8 @@ import { BufferCalcSettingTab } from './settings';
 import { CalculationEngine } from './calculations/engine';
 import { ReagentDatabase } from './data/reagents';
 import { BufferCalcUI } from './ui/buffer-calc-ui';
+import { TemplateDatabase } from './data/templates';
+import { TemplateSelectorModal } from './ui/template-selector';
 
 export default class BufferCalcPlugin extends Plugin {
 	settings: BufferCalcSettings;
@@ -48,6 +50,11 @@ export default class BufferCalcPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor(
 			'buffer-calc', 
 			this.bufferCalcBlockHandler.bind(this, 'buffer'),
+			100
+		);
+		this.registerMarkdownCodeBlockProcessor(
+			'stock', 
+			this.bufferCalcBlockHandler.bind(this, 'stock'),
 			100
 		);
 		this.registerMarkdownCodeBlockProcessor(
@@ -98,6 +105,14 @@ export default class BufferCalcPlugin extends Plugin {
 			}
 		});
 
+		this.addCommand({
+			id: 'insert-from-template',
+			name: 'Insert Recipe from Template',
+			callback: () => {
+				this.insertFromTemplate();
+			}
+		});
+
 		console.log('Buffer Calc plugin loaded successfully');
 	}
 
@@ -143,7 +158,7 @@ export default class BufferCalcPlugin extends Plugin {
 
 	private parseBlockContent(blockType: string, source: string): BufferCalcBlockContent {
 		try {
-			console.log('Parsing block source:', source);
+			console.log(`Parsing ${blockType} block source:`, source);
 			
 			// Handle empty blocks
 			if (!source.trim()) {
@@ -171,13 +186,20 @@ export default class BufferCalcPlugin extends Plugin {
 			}
 
 			console.log('Parsed data:', parsedData);
-			console.log('Components type:', typeof parsedData.components, Array.isArray(parsedData.components));
+			console.log('Data type:', typeof parsedData);
+			console.log('Data keys:', Object.keys(parsedData));
+			if (parsedData.components) {
+				console.log('Components type:', typeof parsedData.components, Array.isArray(parsedData.components));
+			}
 
-			return {
+			const result = {
 				type: blockType as 'buffer' | 'stock' | 'dilution',
 				data: parsedData,
 				options: parsedData.options || {}
 			};
+			
+			console.log(`Final parsed block content for ${blockType}:`, result);
+			return result;
 
 		} catch (error) {
 			console.error('Error parsing block content:', error);
@@ -277,15 +299,18 @@ export default class BufferCalcPlugin extends Plugin {
 			volumeUnit: this.settings.defaultVolumeUnit,
 			components: []
 		} : blockType === 'stock' ? {
-			reagent: '',
+			reagentName: '',
 			targetConcentration: 100,
 			concentrationUnit: this.settings.defaultConcentrationUnit,
 			volume: 10,
 			volumeUnit: this.settings.defaultVolumeUnit
 		} : {
-			initialConcentration: 1000,
-			initialUnit: this.settings.defaultConcentrationUnit,
-			steps: []
+			stockConcentration: 1000,
+			stockConcentrationUnit: this.settings.defaultConcentrationUnit,
+			finalConcentration: 100,
+			finalConcentrationUnit: this.settings.defaultConcentrationUnit,
+			finalVolume: 100,
+			volumeUnit: this.settings.defaultVolumeUnit
 		};
 
 		return {
@@ -323,6 +348,98 @@ components:
 		} else {
 			new Notice('Please open a note to insert buffer calculation');
 		}
+	}
+
+	private insertFromTemplate() {
+		const templateSelector = new TemplateSelectorModal(
+			this.app,
+			this.settings,
+			(template) => {
+				this.insertTemplateIntoEditor(template);
+			}
+		);
+		templateSelector.open();
+	}
+
+	private insertTemplateIntoEditor(template: any) {
+		const activeView = this.app.workspace.getActiveViewOfType(null as any);
+		
+		if (activeView && 'editor' in activeView) {
+			const editor = (activeView as any).editor;
+			const cursor = editor.getCursor();
+			
+			const yamlContent = this.templateToYAML(template);
+			editor.replaceRange(yamlContent, cursor);
+			editor.setCursor(cursor.line + 1, 0);
+		} else {
+			new Notice('Please open a note to insert template');
+		}
+	}
+
+	private templateToYAML(template: any): string {
+		const data = template.template;
+		let yaml = '';
+
+		if (template.type === 'buffer') {
+			yaml = `\`\`\`buffer
+name: ${data.name}
+totalVolume: ${data.totalVolume}
+volumeUnit: ${data.volumeUnit}
+components:`;
+			if (data.components) {
+				data.components.forEach((comp: any) => {
+					yaml += `
+  - name: ${comp.name}
+    stockConc: ${comp.stockConc}
+    stockUnit: ${comp.stockUnit}
+    finalConc: ${comp.finalConc}
+    finalUnit: ${comp.finalUnit}`;
+				});
+			}
+			if (data.notes) {
+				yaml += `
+notes: ${data.notes}`;
+			}
+			yaml += '\n```';
+		} else if (template.type === 'stock') {
+			yaml = `\`\`\`stock
+name: ${data.name}
+reagentName: ${data.reagentName}
+molecularWeight: ${data.molecularWeight}
+targetConcentration: ${data.targetConcentration}
+concentrationUnit: ${data.concentrationUnit}
+volume: ${data.volume}
+volumeUnit: ${data.volumeUnit}`;
+			if (data.purity) {
+				yaml += `
+purity: ${data.purity}`;
+			}
+			if (data.solvent) {
+				yaml += `
+solvent: ${data.solvent}`;
+			}
+			if (data.notes) {
+				yaml += `
+notes: ${data.notes}`;
+			}
+			yaml += '\n```';
+		} else if (template.type === 'dilution') {
+			yaml = `\`\`\`dilution
+name: ${data.name}
+stockConcentration: ${data.stockConcentration}
+stockConcentrationUnit: ${data.stockConcentrationUnit}
+finalConcentration: ${data.finalConcentration}
+finalConcentrationUnit: ${data.finalConcentrationUnit}
+finalVolume: ${data.finalVolume}
+volumeUnit: ${data.volumeUnit}`;
+			if (data.notes) {
+				yaml += `
+notes: ${data.notes}`;
+			}
+			yaml += '\n```';
+		}
+
+		return yaml;
 	}
 
 	async loadSettings() {

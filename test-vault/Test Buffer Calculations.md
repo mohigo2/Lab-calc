@@ -66,3 +66,35 @@ components: []
 ```
 
 **期待結果:** エラーまたは空の状態表示
+
+## ストック溶液計算テスト
+
+```stock
+name: NaCl Stock Solution
+reagentName: NaCl
+molecularWeight: 58.44
+targetConcentration: 1
+concentrationUnit: M
+volume: 100
+volumeUnit: mL
+purity: 99
+solvent: 蒸留水
+```
+
+**期待結果:** 必要な粉末質量の表示
+
+## 希釈計算テスト
+
+```dilution
+name: Serial Dilution Test
+stockConcentration: 1
+stockConcentrationUnit: M
+finalConcentration: 10
+finalConcentrationUnit: mM
+finalVolume: 100
+volumeUnit: mL
+```
+
+**期待結果:** 希釈計算手順の表示
+
+

@@ -1,0 +1,9 @@
+{
+  "defaultVolumeUnit": "mL",
+  "defaultConcentrationUnit": "mM",
+  "decimalPlaces": 2,
+  "enableSuggestions": false,
+  "showCalculationSteps": false,
+  "customReagents": [],
+  "defaultTemplate": "buffer"
+}

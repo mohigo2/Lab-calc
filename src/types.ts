@@ -6,6 +6,8 @@ export interface BufferCalcSettings {
 	showCalculationSteps: boolean;
 	customReagents: Reagent[];
 	defaultTemplate: string;
+	recipeTemplates: RecipeTemplate[];
+	enableTemplates: boolean;
 }
 
 export interface Reagent {
@@ -158,6 +160,8 @@ export enum WarningType {
 
 export enum ErrorType {
 	IMPOSSIBLE_CONCENTRATION = 'impossible_concentration',
+	INVALID_CONCENTRATION = 'invalid_concentration',
+	INVALID_VOLUME = 'invalid_volume',
 	NEGATIVE_VALUE = 'negative_value',
 	MISSING_REQUIRED_FIELD = 'missing_required_field',
 	INVALID_MOLECULAR_WEIGHT = 'invalid_molecular_weight',
@@ -200,25 +204,7 @@ export interface ComponentInput {
 	lotNumber?: string;
 }
 
-export interface StockData {
-	reagent: string;
-	molecularWeight?: number;
-	targetConcentration: number;
-	concentrationUnit: ConcentrationUnit;
-	volume: number;
-	volumeUnit: VolumeUnit;
-	purity?: number;
-}
 
-export interface DilutionData {
-	initialConcentration: number;
-	initialUnit: ConcentrationUnit;
-	steps: {
-		finalConcentration: number;
-		finalVolume: number;
-		volumeUnit: VolumeUnit;
-	}[];
-}
 
 export interface ReagentDatabase {
 	version: string;
@@ -241,7 +227,9 @@ export const DEFAULT_SETTINGS: BufferCalcSettings = {
 	enableSuggestions: true,
 	showCalculationSteps: false,
 	customReagents: [],
-	defaultTemplate: 'buffer'
+	defaultTemplate: 'buffer',
+	recipeTemplates: [],
+	enableTemplates: true
 };
 
 export const VOLUME_CONVERSION_FACTORS: Record<VolumeUnit, number> = {
@@ -271,3 +259,57 @@ export const CONCENTRATION_CONVERSION_FACTORS: Record<ConcentrationUnit, number>
 	[ConcentrationUnit.PPM]: 1000000,
 	[ConcentrationUnit.PPB]: 1000000000
 };
+
+// Stock solution data interface
+export interface StockData {
+	name?: string;
+	reagentName: string;
+	molecularWeight?: number;
+	targetConcentration: number;
+	concentrationUnit: ConcentrationUnit;
+	volume: number;
+	volumeUnit: VolumeUnit;
+	purity?: number; // Percentage (0-100)
+	solvent?: string;
+	notes?: string;
+}
+
+// Dilution data interface
+export interface DilutionData {
+	name?: string;
+	stockConcentration: number;
+	stockConcentrationUnit: ConcentrationUnit;
+	finalConcentration: number;
+	finalConcentrationUnit: ConcentrationUnit;
+	finalVolume: number;
+	volumeUnit: VolumeUnit;
+	steps?: number; // Number of dilution steps
+	dilutionFactor?: number;
+	notes?: string;
+}
+
+// Recipe template interfaces
+export interface RecipeTemplate {
+	id: string;
+	name: string;
+	description: string;
+	category: TemplateCategory;
+	type: 'buffer' | 'stock' | 'dilution';
+	template: BufferCalcData;
+	tags: string[];
+	difficulty: 'beginner' | 'intermediate' | 'advanced';
+	estimatedTime?: string;
+	author?: string;
+	references?: string[];
+	createdAt: Date;
+	isBuiltIn: boolean;
+}
+
+export enum TemplateCategory {
+	COMMON_BUFFERS = 'common_buffers',
+	PROTEIN_BUFFERS = 'protein_buffers',
+	MOLECULAR_BIOLOGY = 'molecular_biology',
+	CELL_CULTURE = 'cell_culture',
+	ANALYTICAL = 'analytical',
+	CUSTOM = 'custom'
+}
