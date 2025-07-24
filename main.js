@@ -4633,7 +4633,7 @@ var BufferCalcUI = class {
   async renderBufferCalculator() {
     const data = this.blockContent.data;
     const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-    header.createEl("h3", { text: data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97", cls: "buffer-calc-title" });
+    this.createEditableTitle(header, data);
     const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
     const volumeContainer = controls.createEl("div", { cls: "buffer-calc-volume-input" });
     volumeContainer.createEl("label", { text: "\u7DCF\u4F53\u7A4D:" });
@@ -4962,7 +4962,7 @@ var BufferCalcUI = class {
       const data = this.blockContent.data;
       console.log("Stock calculator - Starting render with data:", data);
       const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-      header.createEl("h3", { text: data.name || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97", cls: "buffer-calc-title" });
+      this.createEditableStockTitle(header, data);
       const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
       const reagentContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       reagentContainer.createEl("label", { text: "\u8A66\u85AC\u540D:" });
@@ -5078,7 +5078,7 @@ var BufferCalcUI = class {
       const data = this.blockContent.data;
       console.log("Dilution calculator - Starting render with data:", data);
       const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-      header.createEl("h3", { text: data.name || "\u5E0C\u91C8\u8A08\u7B97", cls: "buffer-calc-title" });
+      this.createEditableDilutionTitle(header, data);
       const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
       const stockConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       stockConcContainer.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:" });
@@ -5401,6 +5401,183 @@ var BufferCalcUI = class {
     const buttons = this.container.querySelectorAll("button");
     buttons.forEach((button) => {
       this.mobileOptimization.optimizeButton(button);
+    });
+  }
+  /**
+   * 編集可能なタイトルを作成
+   */
+  createEditableTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("h3", {
+      text: data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97",
+      cls: "buffer-calc-title editable-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270E",
+      cls: "buffer-calc-edit-title-btn",
+      attr: { "aria-label": "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "",
+      cls: "buffer-calc-title-input",
+      attr: { "placeholder": "\u30D0\u30C3\u30D5\u30A1\u30FC\u540D\u3092\u5165\u529B..." }
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.value = data.name || "";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
+    });
+  }
+  /**
+   * ストック計算用の編集可能なタイトルを作成
+   */
+  createEditableStockTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("h3", {
+      text: data.name || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97",
+      cls: "buffer-calc-title editable-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270E",
+      cls: "buffer-calc-edit-title-btn",
+      attr: { "aria-label": "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "",
+      cls: "buffer-calc-title-input",
+      attr: { "placeholder": "\u30B9\u30C8\u30C3\u30AF\u540D\u3092\u5165\u529B..." }
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.value = data.name || "";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
+    });
+  }
+  /**
+   * 希釈計算用の編集可能なタイトルを作成
+   */
+  createEditableDilutionTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("h3", {
+      text: data.name || "\u5E0C\u91C8\u8A08\u7B97",
+      cls: "buffer-calc-title editable-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270E",
+      cls: "buffer-calc-edit-title-btn",
+      attr: { "aria-label": "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "",
+      cls: "buffer-calc-title-input",
+      attr: { "placeholder": "\u5E0C\u91C8\u540D\u3092\u5165\u529B..." }
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.value = data.name || "";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "\u5E0C\u91C8\u8A08\u7B97";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
     });
   }
 };

@@ -94,7 +94,7 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		header.createEl('h3', { text: data.name || 'バッファー計算', cls: 'buffer-calc-title' });
+		this.createEditableTitle(header, data);
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -534,7 +534,7 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		header.createEl('h3', { text: data.name || 'ストック溶液計算', cls: 'buffer-calc-title' });
+		this.createEditableStockTitle(header, data);
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -690,7 +690,7 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		header.createEl('h3', { text: data.name || '希釈計算', cls: 'buffer-calc-title' });
+		this.createEditableDilutionTitle(header, data);
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -1099,6 +1099,228 @@ export class BufferCalcUI {
 		const buttons = this.container.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
 		buttons.forEach(button => {
 			this.mobileOptimization.optimizeButton(button);
+		});
+	}
+
+	/**
+	 * 編集可能なタイトルを作成
+	 */
+	private createEditableTitle(container: HTMLElement, data: BufferData): void {
+		const titleContainer = container.createEl('div', { cls: 'buffer-calc-title-container' });
+		
+		// タイトル表示用要素
+		const titleDisplay = titleContainer.createEl('h3', { 
+			text: data.name || 'バッファー計算', 
+			cls: 'buffer-calc-title editable-title'
+		});
+		
+		// 編集ボタン
+		const editButton = titleContainer.createEl('button', {
+			text: '✎',
+			cls: 'buffer-calc-edit-title-btn',
+			attr: { 'aria-label': 'タイトルを編集' }
+		});
+
+		// 編集用入力フィールド（初期は非表示）
+		const titleInput = titleContainer.createEl('input', {
+			type: 'text',
+			value: data.name || '',
+			cls: 'buffer-calc-title-input',
+			attr: { 'placeholder': 'バッファー名を入力...' }
+		});
+		titleInput.style.display = 'none';
+
+		// 編集モードの切り替え
+		let isEditing = false;
+
+		const enterEditMode = () => {
+			if (isEditing) return;
+			isEditing = true;
+			
+			titleDisplay.style.display = 'none';
+			editButton.style.display = 'none';
+			titleInput.style.display = 'inline-block';
+			titleInput.value = data.name || '';
+			titleInput.focus();
+			titleInput.select();
+		};
+
+		const exitEditMode = (save: boolean = false) => {
+			if (!isEditing) return;
+			isEditing = false;
+
+			if (save) {
+				const newName = titleInput.value.trim();
+				data.name = newName || undefined;
+				titleDisplay.textContent = newName || 'バッファー計算';
+			}
+
+			titleDisplay.style.display = 'inline-block';
+			editButton.style.display = 'inline-block';
+			titleInput.style.display = 'none';
+		};
+
+		// イベントリスナー
+		editButton.addEventListener('click', enterEditMode);
+		titleDisplay.addEventListener('click', enterEditMode);
+
+		titleInput.addEventListener('blur', () => exitEditMode(true));
+		titleInput.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				exitEditMode(true);
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				exitEditMode(false);
+			}
+		});
+	}
+
+	/**
+	 * ストック計算用の編集可能なタイトルを作成
+	 */
+	private createEditableStockTitle(container: HTMLElement, data: StockData): void {
+		const titleContainer = container.createEl('div', { cls: 'buffer-calc-title-container' });
+		
+		// タイトル表示用要素
+		const titleDisplay = titleContainer.createEl('h3', { 
+			text: data.name || 'ストック溶液計算', 
+			cls: 'buffer-calc-title editable-title'
+		});
+		
+		// 編集ボタン
+		const editButton = titleContainer.createEl('button', {
+			text: '✎',
+			cls: 'buffer-calc-edit-title-btn',
+			attr: { 'aria-label': 'タイトルを編集' }
+		});
+
+		// 編集用入力フィールド（初期は非表示）
+		const titleInput = titleContainer.createEl('input', {
+			type: 'text',
+			value: data.name || '',
+			cls: 'buffer-calc-title-input',
+			attr: { 'placeholder': 'ストック名を入力...' }
+		});
+		titleInput.style.display = 'none';
+
+		// 編集モードの切り替え
+		let isEditing = false;
+
+		const enterEditMode = () => {
+			if (isEditing) return;
+			isEditing = true;
+			
+			titleDisplay.style.display = 'none';
+			editButton.style.display = 'none';
+			titleInput.style.display = 'inline-block';
+			titleInput.value = data.name || '';
+			titleInput.focus();
+			titleInput.select();
+		};
+
+		const exitEditMode = (save: boolean = false) => {
+			if (!isEditing) return;
+			isEditing = false;
+
+			if (save) {
+				const newName = titleInput.value.trim();
+				data.name = newName || undefined;
+				titleDisplay.textContent = newName || 'ストック溶液計算';
+			}
+
+			titleDisplay.style.display = 'inline-block';
+			editButton.style.display = 'inline-block';
+			titleInput.style.display = 'none';
+		};
+
+		// イベントリスナー
+		editButton.addEventListener('click', enterEditMode);
+		titleDisplay.addEventListener('click', enterEditMode);
+
+		titleInput.addEventListener('blur', () => exitEditMode(true));
+		titleInput.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				exitEditMode(true);
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				exitEditMode(false);
+			}
+		});
+	}
+
+	/**
+	 * 希釈計算用の編集可能なタイトルを作成
+	 */
+	private createEditableDilutionTitle(container: HTMLElement, data: DilutionData): void {
+		const titleContainer = container.createEl('div', { cls: 'buffer-calc-title-container' });
+		
+		// タイトル表示用要素
+		const titleDisplay = titleContainer.createEl('h3', { 
+			text: data.name || '希釈計算', 
+			cls: 'buffer-calc-title editable-title'
+		});
+		
+		// 編集ボタン
+		const editButton = titleContainer.createEl('button', {
+			text: '✎',
+			cls: 'buffer-calc-edit-title-btn',
+			attr: { 'aria-label': 'タイトルを編集' }
+		});
+
+		// 編集用入力フィールド（初期は非表示）
+		const titleInput = titleContainer.createEl('input', {
+			type: 'text',
+			value: data.name || '',
+			cls: 'buffer-calc-title-input',
+			attr: { 'placeholder': '希釈名を入力...' }
+		});
+		titleInput.style.display = 'none';
+
+		// 編集モードの切り替え
+		let isEditing = false;
+
+		const enterEditMode = () => {
+			if (isEditing) return;
+			isEditing = true;
+			
+			titleDisplay.style.display = 'none';
+			editButton.style.display = 'none';
+			titleInput.style.display = 'inline-block';
+			titleInput.value = data.name || '';
+			titleInput.focus();
+			titleInput.select();
+		};
+
+		const exitEditMode = (save: boolean = false) => {
+			if (!isEditing) return;
+			isEditing = false;
+
+			if (save) {
+				const newName = titleInput.value.trim();
+				data.name = newName || undefined;
+				titleDisplay.textContent = newName || '希釈計算';
+			}
+
+			titleDisplay.style.display = 'inline-block';
+			editButton.style.display = 'inline-block';
+			titleInput.style.display = 'none';
+		};
+
+		// イベントリスナー
+		editButton.addEventListener('click', enterEditMode);
+		titleDisplay.addEventListener('click', enterEditMode);
+
+		titleInput.addEventListener('blur', () => exitEditMode(true));
+		titleInput.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				exitEditMode(true);
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				exitEditMode(false);
+			}
 		});
 	}
 }

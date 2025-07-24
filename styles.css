@@ -287,11 +287,58 @@
     padding-bottom: 8px;
 }
 
+.buffer-calc-title-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
 .buffer-calc-title {
     margin: 0 0 4px 0;
     color: var(--text-normal);
     font-size: 1.2em;
     font-weight: 600;
+}
+
+.buffer-calc-title.editable-title {
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.buffer-calc-title.editable-title:hover {
+    color: var(--text-accent);
+}
+
+.buffer-calc-edit-title-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px;
+    border-radius: 3px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.buffer-calc-edit-title-btn:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+    opacity: 1;
+}
+
+.buffer-calc-title-input {
+    font-size: 1.2em;
+    font-weight: 600;
+    border: 2px solid var(--interactive-accent);
+    border-radius: 4px;
+    padding: 4px 8px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    outline: none;
+    min-width: 200px;
+    box-shadow: 0 0 0 2px var(--interactive-accent-rgb-low);
 }
 
 /* Controls */
@@ -693,6 +740,25 @@
         font-size: 1.1em;
     }
     
+    .buffer-calc-title-container {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .buffer-calc-title-input {
+        font-size: 1.1em;
+        min-width: 150px;
+        padding: 6px 10px;
+    }
+    
+    .buffer-calc-edit-title-btn {
+        font-size: 16px;
+        padding: 6px;
+        min-width: 32px;
+        min-height: 32px;
+        touch-action: manipulation;
+    }
+    
     /* 入力グループの縦配置 */
     .buffer-calc-input-group {
         flex-direction: column;
@@ -937,6 +1003,18 @@
     
     .buffer-calc-title {
         font-size: 1em;
+    }
+    
+    .buffer-calc-title-input {
+        font-size: 1em;
+        min-width: 120px;
+        padding: 8px;
+    }
+    
+    .buffer-calc-edit-title-btn {
+        font-size: 14px;
+        min-width: 28px;
+        min-height: 28px;
     }
     
     .buffer-calc-component {
