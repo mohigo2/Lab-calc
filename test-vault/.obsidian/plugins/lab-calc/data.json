@@ -1,0 +1,16 @@
+{
+  "defaultVolumeUnit": "mL",
+  "defaultConcentrationUnit": "mM",
+  "decimalPlaces": 2,
+  "enableSuggestions": true,
+  "showCalculationSteps": false,
+  "customReagents": [],
+  "defaultTemplate": "buffer",
+  "recipeTemplates": [],
+  "enableTemplates": true,
+  "calculationHistory": [],
+  "enableHistory": true,
+  "maxHistoryEntries": 100,
+  "customReagentCategories": [],
+  "enableCustomCategories": true
+}

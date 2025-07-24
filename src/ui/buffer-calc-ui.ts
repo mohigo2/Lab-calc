@@ -18,6 +18,7 @@ import {
 import { CalculationEngine } from '../calculations/engine';
 import { ReagentDatabase } from '../data/reagents';
 import { ConversionUtils } from '../utils/conversions';
+import { MobileOptimization } from '../utils/mobile-optimization';
 
 export class BufferCalcUI {
 	private container: HTMLElement;
@@ -26,7 +27,9 @@ export class BufferCalcUI {
 	private reagentDatabase: ReagentDatabase;
 	private settings: BufferCalcSettings;
 	private context: MarkdownPostProcessorContext;
+	private plugin?: any; // BufferCalcPlugin instance
 	private lastResult: CalculationResult | null = null;
+	private mobileOptimization: MobileOptimization;
 
 	constructor(
 		container: HTMLElement,
@@ -34,7 +37,8 @@ export class BufferCalcUI {
 		calculationEngine: CalculationEngine,
 		reagentDatabase: ReagentDatabase,
 		settings: BufferCalcSettings,
-		context: MarkdownPostProcessorContext
+		context: MarkdownPostProcessorContext,
+		plugin?: any
 	) {
 		this.container = container;
 		this.blockContent = blockContent;
@@ -42,12 +46,17 @@ export class BufferCalcUI {
 		this.reagentDatabase = reagentDatabase;
 		this.settings = settings;
 		this.context = context;
+		this.plugin = plugin;
+		this.mobileOptimization = MobileOptimization.getInstance();
 	}
 
 	async render(): Promise<void> {
 		try {
 			this.container.empty();
 			this.container.addClass('buffer-calc-ui');
+			
+			// モバイル最適化の適用
+			this.applyMobileOptimizations();
 
 			console.log(`Rendering UI for type: ${this.blockContent.type}`, this.blockContent);
 
@@ -365,6 +374,11 @@ export class BufferCalcUI {
 			const result = this.calculationEngine.calculateBuffer(data);
 			this.lastResult = result;
 			this.renderResults(result);
+			
+			// 履歴に追加（エラーがない場合のみ）
+			if (result.errors.length === 0 && this.plugin) {
+				this.plugin.addToHistory('buffer', data.name || 'バッファー計算', data, result);
+			}
 		} catch (error) {
 			console.error('Calculation error:', error);
 			this.renderError(error.message);
@@ -834,6 +848,11 @@ export class BufferCalcUI {
 			console.log('Stock calculation result:', result);
 			this.lastResult = result;
 			this.renderStockResults(result);
+			
+			// 履歴に追加（エラーがない場合のみ）
+			if (result.errors.length === 0 && this.plugin) {
+				this.plugin.addToHistory('stock', data.name || 'ストック溶液計算', data, result);
+			}
 		} catch (error) {
 			console.error('Stock calculation error:', error);
 			console.error('Error stack:', error.stack);
@@ -858,6 +877,11 @@ export class BufferCalcUI {
 			}
 			
 			this.renderDilutionResults(result);
+			
+			// 履歴に追加（エラーがない場合のみ）
+			if (result.errors.length === 0 && this.plugin) {
+				this.plugin.addToHistory('dilution', data.name || '希釈計算', data, result);
+			}
 		} catch (error) {
 			console.error('Dilution calculation error:', error);
 			console.error('Error stack:', error.stack);
@@ -1029,5 +1053,52 @@ export class BufferCalcUI {
 				});
 			});
 		}
+	}
+
+	/**
+	 * モバイル最適化の適用
+	 */
+	private applyMobileOptimizations(): void {
+		const viewportInfo = this.mobileOptimization.getViewportInfo();
+
+		// モバイルクラスの追加
+		if (viewportInfo.isMobile) {
+			this.container.addClass('mobile-optimized');
+		}
+		if (viewportInfo.isTablet) {
+			this.container.addClass('tablet-optimized');
+		}
+		if (viewportInfo.isTouchDevice) {
+			this.container.addClass('touch-device');
+		}
+
+		// アクセシビリティの改善
+		this.mobileOptimization.improveAccessibility(this.container);
+
+		// 入力フィールドとボタンの最適化
+		setTimeout(() => {
+			this.optimizeInputElements();
+			this.optimizeButtons();
+		}, 100);
+	}
+
+	/**
+	 * 入力要素の最適化
+	 */
+	private optimizeInputElements(): void {
+		const inputs = this.container.querySelectorAll('input') as NodeListOf<HTMLInputElement>;
+		inputs.forEach(input => {
+			this.mobileOptimization.optimizeInputField(input);
+		});
+	}
+
+	/**
+	 * ボタン要素の最適化
+	 */
+	private optimizeButtons(): void {
+		const buttons = this.container.querySelectorAll('button') as NodeListOf<HTMLButtonElement>;
+		buttons.forEach(button => {
+			this.mobileOptimization.optimizeButton(button);
+		});
 	}
 }

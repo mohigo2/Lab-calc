@@ -5,6 +5,7 @@ import {
 	BufferCalcSettings
 } from '../types';
 import { TemplateDatabase } from '../data/templates';
+import { MobileOptimization } from '../utils/mobile-optimization';
 
 export class TemplateSelectorModal extends Modal {
 	private templateDatabase: TemplateDatabase;
@@ -13,6 +14,7 @@ export class TemplateSelectorModal extends Modal {
 	private selectedCategory: TemplateCategory | 'all' = 'all';
 	private selectedType: 'buffer' | 'stock' | 'dilution' | 'all' = 'all';
 	private searchQuery: string = '';
+	private mobileOptimization: MobileOptimization;
 
 	constructor(
 		app: App,
@@ -23,12 +25,17 @@ export class TemplateSelectorModal extends Modal {
 		this.settings = settings;
 		this.onTemplateSelect = onTemplateSelect;
 		this.templateDatabase = TemplateDatabase.getInstance();
+		this.mobileOptimization = MobileOptimization.getInstance();
 	}
 
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.addClass('buffer-calc-template-selector');
+		
+		// モバイル最適化を適用
+		this.mobileOptimization.optimizeModal(contentEl);
+		this.mobileOptimization.improveAccessibility(contentEl);
 
 		this.setTitle('レシピテンプレートを選択');
 

@@ -5,7 +5,8 @@ import {
 	Setting,
 	App,
 	Modal,
-	Notice
+	Notice,
+	MarkdownView
 } from 'obsidian';
 
 import {
@@ -23,15 +24,21 @@ import { ReagentDatabase } from './data/reagents';
 import { BufferCalcUI } from './ui/buffer-calc-ui';
 import { TemplateDatabase } from './data/templates';
 import { TemplateSelectorModal } from './ui/template-selector';
+import { HistoryManager } from './utils/history-manager';
+import { CalculationHistoryModal } from './ui/calculation-history-modal';
+import { ReagentCategoryModal } from './ui/reagent-category-modal';
+import { DataViewIntegration } from './integrations/dataview-integration';
+import { DataViewIntegrationModal } from './ui/dataview-integration-modal';
 
 export default class BufferCalcPlugin extends Plugin {
 	settings: BufferCalcSettings;
 	calculationEngine: CalculationEngine;
 	reagentDatabase: ReagentDatabase;
+	dataViewIntegration: DataViewIntegration;
 	private settingsTab: BufferCalcSettingTab;
 
 	async onload() {
-		console.log('Loading Buffer Calc plugin');
+		console.log('Loading Buffer Calc plugin - DEBUG VERSION');
 
 		// Load plugin settings
 		await this.loadSettings();
@@ -40,6 +47,10 @@ export default class BufferCalcPlugin extends Plugin {
 		this.calculationEngine = new CalculationEngine(this.settings);
 		this.reagentDatabase = new ReagentDatabase();
 		await this.reagentDatabase.initialize();
+
+		// Initialize DataView integration
+		this.dataViewIntegration = new DataViewIntegration(this.app);
+		this.dataViewIntegration.registerWithDataView();
 
 		// Register code block processors for different calculation types
 		this.registerMarkdownCodeBlockProcessor(
@@ -89,13 +100,6 @@ export default class BufferCalcPlugin extends Plugin {
 			}
 		});
 
-		this.addCommand({
-			id: 'insert-saved-recipe',
-			name: 'Insert Saved Recipe',
-			callback: () => {
-				new RecipeInsertModal(this.app, this).open();
-			}
-		});
 
 		this.addCommand({
 			id: 'manage-reagents',
@@ -113,7 +117,38 @@ export default class BufferCalcPlugin extends Plugin {
 			}
 		});
 
-		console.log('Buffer Calc plugin loaded successfully');
+		this.addCommand({
+			id: 'view-calculation-history',
+			name: 'View Calculation History',
+			callback: () => {
+				this.openCalculationHistory();
+			}
+		});
+		this.addCommand({
+			id: 'manage-reagent-categories',
+			name: 'Manage Reagent Categories',
+			callback: () => {
+				this.openReagentCategoryManager();
+			}
+		});
+		this.addCommand({
+			id: 'dataview-integration',
+			name: 'DataView Integration',
+			callback: () => {
+				this.openDataViewIntegration();
+			}
+		});
+
+		console.log('Buffer Calc plugin loaded successfully - ALL COMMANDS REGISTERED');
+		console.log('Registered commands:', [
+			'insert-buffer-calc',
+			'open-recipe-manager', 
+			'manage-reagents',
+			'insert-from-template',
+			'view-calculation-history',
+			'manage-reagent-categories',
+			'dataview-integration'
+		]);
 	}
 
 	onunload() {
@@ -142,7 +177,8 @@ export default class BufferCalcPlugin extends Plugin {
 				this.calculationEngine,
 				this.reagentDatabase,
 				this.settings,
-				ctx
+				ctx,
+				this
 			);
 
 			await ui.render();
@@ -320,13 +356,15 @@ export default class BufferCalcPlugin extends Plugin {
 	}
 
 	private insertBufferCalcBlock() {
-		const activeView = this.app.workspace.getActiveViewOfType(null as any);
-		
-		if (activeView && 'editor' in activeView) {
-			const editor = (activeView as any).editor;
-			const cursor = editor.getCursor();
+		try {
+			console.log('Inserting buffer calc block...');
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 			
-			const template = `\`\`\`buffer
+			if (activeView && 'editor' in activeView) {
+				const editor = (activeView as any).editor;
+				const cursor = editor.getCursor();
+				
+				const template = `\`\`\`buffer
 name: My Buffer
 totalVolume: 1000
 volumeUnit: mL
@@ -343,36 +381,58 @@ components:
     finalUnit: mM
 \`\`\``;
 
-			editor.replaceRange(template, cursor);
-			editor.setCursor(cursor.line + 1, 0);
-		} else {
-			new Notice('Please open a note to insert buffer calculation');
+				editor.replaceRange(template, cursor);
+				editor.setCursor(cursor.line + 1, 0);
+				new Notice('バッファー計算ブロックを挿入しました');
+			} else {
+				new Notice('ノートを開いてからバッファー計算を挿入してください');
+			}
+		} catch (error) {
+			console.error('Error inserting buffer calc block:', error);
+			new Notice('バッファー計算挿入でエラーが発生しました: ' + error.message);
 		}
 	}
 
 	private insertFromTemplate() {
-		const templateSelector = new TemplateSelectorModal(
-			this.app,
-			this.settings,
-			(template) => {
-				this.insertTemplateIntoEditor(template);
-			}
-		);
-		templateSelector.open();
+		try {
+			console.log('Opening template selector...');
+			const templateSelector = new TemplateSelectorModal(
+				this.app,
+				this.settings,
+				(template) => {
+					console.log('Template selected:', template);
+					this.insertTemplateIntoEditor(template);
+				}
+			);
+			templateSelector.open();
+		} catch (error) {
+			console.error('Error opening template selector:', error);
+			new Notice('テンプレート選択でエラーが発生しました: ' + error.message);
+		}
 	}
 
 	private insertTemplateIntoEditor(template: any) {
-		const activeView = this.app.workspace.getActiveViewOfType(null as any);
-		
-		if (activeView && 'editor' in activeView) {
-			const editor = (activeView as any).editor;
-			const cursor = editor.getCursor();
+		try {
+			console.log('Inserting template into editor:', template);
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
 			
-			const yamlContent = this.templateToYAML(template);
-			editor.replaceRange(yamlContent, cursor);
-			editor.setCursor(cursor.line + 1, 0);
-		} else {
-			new Notice('Please open a note to insert template');
+			if (activeView && 'editor' in activeView) {
+				const editor = (activeView as any).editor;
+				const cursor = editor.getCursor();
+				
+				const yamlContent = this.templateToYAML(template);
+				console.log('Generated YAML content:', yamlContent);
+				
+				editor.replaceRange(yamlContent, cursor);
+				editor.setCursor(cursor.line + 1, 0);
+				
+				new Notice(`テンプレート「${template.name}」を挿入しました`);
+			} else {
+				new Notice('ノートを開いてからテンプレートを挿入してください');
+			}
+		} catch (error) {
+			console.error('Error inserting template:', error);
+			new Notice('テンプレート挿入でエラーが発生しました: ' + error.message);
 		}
 	}
 
@@ -440,6 +500,79 @@ notes: ${data.notes}`;
 		}
 
 		return yaml;
+	}
+
+	private openCalculationHistory() {
+		const historyModal = new CalculationHistoryModal(
+			this.app,
+			this.settings,
+			async (newSettings: BufferCalcSettings) => {
+				this.settings = newSettings;
+				await this.saveSettings();
+			},
+			(yaml: string) => {
+				this.insertYamlIntoEditor(yaml);
+			}
+		);
+		historyModal.open();
+	}
+
+	private openReagentCategoryManager() {
+		const categoryModal = new ReagentCategoryModal(
+			this.app,
+			this.settings,
+			async (newSettings: BufferCalcSettings) => {
+				this.settings = newSettings;
+				await this.saveSettings();
+			}
+		);
+		categoryModal.open();
+	}
+
+	private openDataViewIntegration() {
+		const dataViewModal = new DataViewIntegrationModal(
+			this.app,
+			this.settings,
+			() => {
+				// モーダルが閉じられた時の処理
+			}
+		);
+		dataViewModal.open();
+	}
+
+	private insertYamlIntoEditor(yaml: string) {
+		try {
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			
+			if (activeView && 'editor' in activeView) {
+				const editor = (activeView as any).editor;
+				const cursor = editor.getCursor();
+				
+				editor.replaceRange(yaml, cursor);
+				editor.setCursor(cursor.line + 1, 0);
+			} else {
+				new Notice('ノートを開いてから計算を挿入してください');
+			}
+		} catch (error) {
+			console.error('Error inserting YAML:', error);
+			new Notice('計算の挿入でエラーが発生しました');
+		}
+	}
+
+	addToHistory(
+		type: 'buffer' | 'stock' | 'dilution',
+		name: string,
+		inputData: BufferCalcData,
+		result: CalculationResult,
+		notes?: string
+	) {
+		if (!this.settings.enableHistory) {
+			return;
+		}
+
+		const entry = HistoryManager.createHistoryEntry(type, name, inputData, result, notes);
+		this.settings = HistoryManager.addToHistory(this.settings, entry);
+		this.saveSettings();
 	}
 
 	async loadSettings() {

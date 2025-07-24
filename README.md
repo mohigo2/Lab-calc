@@ -1,8 +1,8 @@
-# Buffer Calc - Obsidian プラグイン
+# Lab Calc - Obsidian プラグイン
 
-研究室のバッファー調製計算のための包括的なObsidianプラグインです。YAMLコードブロックをリアルタイム計算、試薬オートコンプリート、プロフェッショナルな実験室機能を備えたインタラクティブな計算機に変換します。
+研究室の包括的計算ソリューションのためのObsidianプラグインです。YAMLコードブロックをリアルタイム計算、試薬オートコンプリート、プロフェッショナルな実験室機能を備えたインタラクティブな計算機に変換します。
 
-**🎉 現在のステータス: フェーズ2完了 - すべての計算機タイプ（バッファー、ストック、希釈）が完全動作**
+**🎉 現在のステータス: Phase 3完了 - テンプレート、履歴、カテゴリー、DataView連携、モバイル最適化すべて実装完了**
 
 ## 機能
 
@@ -91,30 +91,55 @@ components:
 
 ## インストール
 
-### 開発版インストール（現在）
-開発版のため、手動でインストールしてください：
+### 🚀 手動インストール（推奨）
+プラグインは完全に使用可能な状態です。以下の手順でインストールしてください：
 
-1. プロジェクトをクローンまたはダウンロード：
+#### 方法1: 直接ファイルコピー（最も簡単）
+1. **必要なファイルをダウンロード**：
+   - `main.js`
+   - `manifest.json` 
+   - `styles.css`
+
+2. **プラグインフォルダを作成**：
+   ```
+   あなたのVault/.obsidian/plugins/lab-calc/
+   ```
+
+3. **ファイルをコピー**：
+   上記3つのファイルを作成したフォルダに配置
+
+4. **プラグインを有効化**：
+   - Obsidian設定 → コミュニティプラグイン
+   - 「Lab Calc」を有効化
+
+#### 方法2: 開発版フルインストール
+1. **プロジェクトをクローン**：
 ```bash
 git clone [repository-url]
-cd buffer-calc
+cd "Lab Calc"
 ```
 
-2. プラグインをビルド：
+2. **プラグインをビルド**：
 ```bash
 npm install
 npm run build
 ```
 
-3. ObsidianVaultにコピー：
+3. **ObsidianVaultにコピー**：
 ```bash
-# ビルドファイルをvaultのプラグインフォルダにコピー
-cp -r . /path/to/your/vault/.obsidian/plugins/buffer-calc/
+# 必要なファイルのみをコピー
+cp main.js manifest.json styles.css "/path/to/your/vault/.obsidian/plugins/lab-calc/"
 ```
 
-4. プラグインを有効化：
-   - Obsidian設定 → コミュニティプラグインを開く
-   - "Buffer Calc"を有効化
+4. **プラグインを有効化**：
+   - Obsidian設定 → コミュニティプラグイン
+   - 「Lab Calc」を有効化
+
+### ✅ インストール確認
+プラグインが正しくインストールされると：
+- コマンドパレット（Ctrl/Cmd+P）で「Lab Calc」関連コマンドが表示される
+- 設定に「Lab Calc」タブが追加される
+- ノートで `buffer`, `stock`, `dilution` コードブロックが使用可能になる
 
 ### テスト環境
 完全なテスト環境が含まれています：
@@ -125,6 +150,28 @@ cp -r . /path/to/your/vault/.obsidian/plugins/buffer-calc/
 # または開発ウォッチモードで実行
 ./dev-watch.sh
 ```
+
+## 🎯 クイックスタート
+
+### インストール後の最初のステップ
+1. **プラグインが有効化されていることを確認**
+2. **新しいノートを作成**
+3. **以下のいずれかのコードブロックを試してみてください**
+
+### 30秒で始める
+```buffer
+name: テストバッファー
+totalVolume: 100
+volumeUnit: mL
+components:
+  - name: NaCl
+    stockConc: 5
+    stockUnit: M
+    finalConc: 150
+    finalUnit: mM
+```
+
+このコードブロックを貼り付けると、すぐにインタラクティブな計算機が表示されます！
 
 ## 使用方法
 

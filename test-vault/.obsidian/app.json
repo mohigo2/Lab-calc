@@ -1,27 +1,4 @@
 {
   "legacyEditor": false,
-  "livePreview": true,
-  "showUnsupportedFiles": false,
-  "attachmentFolderPath": "./",
-  "defaultViewMode": "preview",
-  "promptDelete": false,
-  "autoPairBrackets": true,
-  "autoPairMarkdown": true,
-  "useMarkdownLinks": false,
-  "showInlineTitle": true,
-  "useTab": true,
-  "tabSize": 4,
-  "readableLineLength": true,
-  "maxLinkTextLength": 100,
-  "alwaysUpdateLinks": false,
-  "newFileLocation": "folder",
-  "newFileFolderPath": "./",
-  "showFrontmatter": true,
-  "foldHeading": true,
-  "foldIndent": true,
-  "showLineNumber": false,
-  "rightToLeft": false,
-  "spellcheck": false,
-  "strictLineBreaks": false,
-  "vimMode": false
+  "livePreview": true
 }

@@ -18,6 +18,11 @@ import {
 	ConcentrationUnit,
 	Reagent
 } from './types';
+import { SettingsImportExportModal } from './ui/settings-import-export-modal';
+import { CalculationHistoryModal } from './ui/calculation-history-modal';
+import { ReagentCategoryModal } from './ui/reagent-category-modal';
+import { CategoryManager } from './utils/category-manager';
+import { DataViewIntegrationModal } from './ui/dataview-integration-modal';
 
 export class BufferCalcSettingTab extends PluginSettingTab {
 	plugin: BufferCalcPlugin;
@@ -32,12 +37,16 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		// Header
-		containerEl.createEl('h1', { text: 'Buffer Calc Settings' });
+		containerEl.createEl('h1', { text: 'Buffer Calc 設定' });
 
 		this.addGeneralSettings();
 		this.addUnitsSettings();
 		this.addDisplaySettings();
 		this.addReagentSettings();
+		this.addCategorySettings();
+		this.addHistorySettings();
+		this.addDataViewSettings();
+		this.addImportExportSettings();
 		this.addDataManagement();
 	}
 
@@ -45,11 +54,11 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		// General Settings Section
-		containerEl.createEl('h2', { text: 'General Settings' });
+		containerEl.createEl('h2', { text: '一般設定' });
 
 		new Setting(containerEl)
-			.setName('Enable auto-suggestions')
-			.setDesc('Enable reagent name suggestions while typing')
+			.setName('自動補完を有効にする')
+			.setDesc('入力時に試薬名の提案を表示します')
 			.addToggle((toggle: ToggleComponent) => {
 				toggle
 					.setValue(this.plugin.settings.enableSuggestions)
@@ -60,8 +69,8 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Show calculation steps')
-			.setDesc('Display detailed calculation steps in results')
+			.setName('計算ステップを表示')
+			.setDesc('結果に詳細な計算ステップを表示します')
 			.addToggle((toggle: ToggleComponent) => {
 				toggle
 					.setValue(this.plugin.settings.showCalculationSteps)
@@ -72,8 +81,8 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Decimal places')
-			.setDesc('Number of decimal places to show in results')
+			.setName('小数点以下の桁数')
+			.setDesc('結果に表示する小数点以下の桁数')
 			.addSlider((slider: SliderComponent) => {
 				slider
 					.setLimits(0, 5, 1)
@@ -90,11 +99,11 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		// Units Settings Section
-		containerEl.createEl('h2', { text: 'Default Units' });
+		containerEl.createEl('h2', { text: 'デフォルト単位' });
 
 		new Setting(containerEl)
-			.setName('Default volume unit')
-			.setDesc('Default unit for volumes in calculations')
+			.setName('デフォルト体積単位')
+			.setDesc('計算で使用されるデフォルトの体積単位')
 			.addDropdown((dropdown: DropdownComponent) => {
 				const options: Record<string, string> = {
 					[VolumeUnit.LITER]: 'Liter (L)',
@@ -116,8 +125,8 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
-			.setName('Default concentration unit')
-			.setDesc('Default unit for concentrations in calculations')
+			.setName('デフォルト濃度単位')
+			.setDesc('計算で使用されるデフォルトの濃度単位')
 			.addDropdown((dropdown: DropdownComponent) => {
 				const options: Record<string, string> = {
 					[ConcentrationUnit.MOLAR]: 'Molar (M)',
@@ -148,15 +157,15 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		// Display Settings Section
-		containerEl.createEl('h2', { text: 'Display Settings' });
+		containerEl.createEl('h2', { text: '表示設定' });
 
 		new Setting(containerEl)
-			.setName('Default template')
-			.setDesc('Default template for new buffer calculations')
+			.setName('デフォルトテンプレート')
+			.setDesc('新しいバッファー計算のデフォルトテンプレート')
 			.addDropdown((dropdown: DropdownComponent) => {
-				dropdown.addOption('buffer', 'Buffer Preparation');
-				dropdown.addOption('stock', 'Stock Solution');
-				dropdown.addOption('dilution', 'Serial Dilution');
+				dropdown.addOption('buffer', 'バッファー調製');
+				dropdown.addOption('stock', 'ストック溶液');
+				dropdown.addOption('dilution', '段階希釈');
 
 				dropdown
 					.setValue(this.plugin.settings.defaultTemplate)
@@ -171,7 +180,7 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		// Custom Reagents Section
-		containerEl.createEl('h2', { text: 'Custom Reagents' });
+		containerEl.createEl('h2', { text: 'カスタム試薬' });
 
 		const reagentContainer = containerEl.createEl('div', { cls: 'buffer-calc-reagent-list' });
 
@@ -180,7 +189,7 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 
 			if (this.plugin.settings.customReagents.length === 0) {
 				reagentContainer.createEl('p', { 
-					text: 'No custom reagents added yet.',
+					text: 'まだカスタム試薬は追加されていません。',
 					cls: 'buffer-calc-no-reagents'
 				});
 			} else {
@@ -193,17 +202,17 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 
 					const actionsEl = reagentEl.createEl('div', { cls: 'buffer-calc-reagent-actions' });
 					
-					const editBtn = actionsEl.createEl('button', { text: 'Edit', cls: 'mod-cta' });
+					const editBtn = actionsEl.createEl('button', { text: '編集', cls: 'mod-cta' });
 					editBtn.addEventListener('click', () => {
 						this.openReagentEditor(reagent, index, updateReagentList);
 					});
 
-					const deleteBtn = actionsEl.createEl('button', { text: 'Delete', cls: 'mod-destructive' });
+					const deleteBtn = actionsEl.createEl('button', { text: '削除', cls: 'mod-destructive' });
 					deleteBtn.addEventListener('click', async () => {
 						this.plugin.settings.customReagents.splice(index, 1);
 						await this.plugin.saveSettings();
 						updateReagentList();
-						new Notice('Reagent deleted');
+						new Notice('試薬を削除しました');
 					});
 				});
 			}
@@ -212,14 +221,217 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		updateReagentList();
 
 		new Setting(containerEl)
-			.setName('Add custom reagent')
-			.setDesc('Add a new reagent to your personal database')
+			.setName('カスタム試薬を追加')
+			.setDesc('個人データベースに新しい試薬を追加します')
 			.addButton((button: ButtonComponent) => {
 				button
-					.setButtonText('Add Reagent')
+					.setButtonText('試薬を追加')
 					.setClass('mod-cta')
 					.onClick(() => {
 						this.openReagentEditor(null, -1, updateReagentList);
+					});
+			});
+	}
+
+	private addCategorySettings(): void {
+		const { containerEl } = this;
+
+		// Category Settings Section
+		containerEl.createEl('h2', { text: '試薬カテゴリー設定' });
+
+		new Setting(containerEl)
+			.setName('カスタムカテゴリーを有効にする')
+			.setDesc('独自の試薬カテゴリーを作成・管理できます')
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.enableCustomCategories);
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.enableCustomCategories = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('カテゴリー管理')
+			.setDesc('試薬カテゴリーの作成、編集、削除を行います')
+			.addButton(button => {
+				button
+					.setButtonText('カテゴリー管理を開く')
+					.setClass('mod-cta')
+					.onClick(() => {
+						const modal = new ReagentCategoryModal(
+							this.app,
+							this.plugin.settings,
+							async (updatedSettings: BufferCalcSettings) => {
+								this.plugin.settings = updatedSettings;
+								await this.plugin.saveSettings();
+								new Notice('カテゴリー設定が保存されました');
+							}
+						);
+						modal.open();
+					});
+			});
+
+		// 統計表示
+		const categoryCount = this.plugin.settings.customReagentCategories?.length || 0;
+		const reagentCount = this.plugin.settings.customReagents?.length || 0;
+		const categorizedCount = this.plugin.settings.customReagents?.filter(r => r.category)?.length || 0;
+
+		const statsEl = containerEl.createEl('div', { cls: 'category-settings-stats' });
+		statsEl.createEl('p', { 
+			text: `カスタムカテゴリー: ${categoryCount} 個` 
+		});
+		statsEl.createEl('p', { 
+			text: `分類済み試薬: ${categorizedCount} / ${reagentCount} 個` 
+		});
+	}
+
+	private addHistorySettings(): void {
+		const { containerEl } = this;
+
+		// History Settings Section
+		containerEl.createEl('h2', { text: '計算履歴設定' });
+
+		new Setting(containerEl)
+			.setName('計算履歴を有効にする')
+			.setDesc('計算結果を自動的に履歴に保存します')
+			.addToggle(toggle => {
+				toggle.setValue(this.plugin.settings.enableHistory);
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.enableHistory = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('最大履歴保存数')
+			.setDesc('保存する履歴の最大数（1-1000）')
+			.addSlider(slider => {
+				slider.setLimits(1, 1000, 10);
+				slider.setValue(this.plugin.settings.maxHistoryEntries);
+				slider.setDynamicTooltip();
+				slider.onChange(async (value: number) => {
+					this.plugin.settings.maxHistoryEntries = value;
+					await this.plugin.saveSettings();
+				});
+			});
+
+		new Setting(containerEl)
+			.setName('計算履歴を表示')
+			.setDesc('保存された計算履歴を表示・管理します')
+			.addButton(button => {
+				button.setButtonText('履歴を開く');
+				button.setClass('mod-cta');
+				button.onClick(() => {
+					const historyModal = new CalculationHistoryModal(
+						this.app,
+						this.plugin.settings,
+						async (newSettings) => {
+							this.plugin.settings = newSettings;
+							await this.plugin.saveSettings();
+							this.display();
+						},
+						(yaml: string) => {
+							// エディターに挿入する機能は履歴モーダル内で処理
+						}
+					);
+					historyModal.open();
+				});
+			});
+	}
+
+	private addDataViewSettings(): void {
+		const { containerEl } = this;
+
+		// DataView Settings Section
+		containerEl.createEl('h2', { text: 'DataView統合設定' });
+
+		// DataView統合の説明
+		const descEl = containerEl.createEl('p', { 
+			cls: 'setting-item-description'
+		});
+		descEl.innerHTML = `
+			DataViewプラグインと連携して、Buffer Calcの計算データをクエリで検索・分析できます。<br>
+			<strong>注意:</strong> この機能を使用するには、DataViewプラグインがインストールされ有効化されている必要があります。
+		`;
+
+		// DataView統合管理
+		new Setting(containerEl)
+			.setName('DataView統合管理')
+			.setDesc('DataViewクエリの生成とデータ統計を表示します')
+			.addButton((button: ButtonComponent) => {
+				button
+					.setButtonText('DataView統合を開く')
+					.setClass('mod-cta')
+					.onClick(() => {
+						const modal = new DataViewIntegrationModal(
+							this.app,
+							this.plugin.settings,
+							() => {
+								// モーダルが閉じられた時の処理
+							}
+						);
+						modal.open();
+					});
+			});
+
+		// DataViewプラグインの状態表示
+		const isDataViewAvailable = this.plugin.dataViewIntegration?.isDataViewAvailable() || false;
+		const statusEl = containerEl.createDiv('dataview-status');
+		if (isDataViewAvailable) {
+			statusEl.addClass('status-success');
+			statusEl.innerHTML = '✅ DataViewプラグインが利用可能です';
+		} else {
+			statusEl.addClass('status-warning');
+			statusEl.innerHTML = '⚠️ DataViewプラグインが見つかりません';
+		}
+
+		// 統計情報の表示
+		if (isDataViewAvailable) {
+			this.plugin.dataViewIntegration.generateStatistics().then(stats => {
+				const statsEl = containerEl.createDiv('dataview-stats');
+				statsEl.createEl('h4', { text: 'データ統計' });
+				statsEl.createEl('p', { text: `検出されたBuffer Calc計算: ${stats.totalCalculations} 件` });
+				statsEl.createEl('p', { text: `バッファー計算: ${stats.bufferCount} 件` });
+				statsEl.createEl('p', { text: `ストック溶液計算: ${stats.stockCount} 件` });
+				statsEl.createEl('p', { text: `希釈計算: ${stats.dilutionCount} 件` });
+			}).catch(error => {
+				const errorEl = containerEl.createDiv('dataview-error');
+				errorEl.setText('データの読み込み中にエラーが発生しました');
+			});
+		}
+	}
+
+	private addImportExportSettings(): void {
+		const { containerEl } = this;
+
+		// Import/Export Settings Section
+		containerEl.createEl('h2', { text: '設定のインポート/エクスポート' });
+		containerEl.createEl('p', { 
+			text: '設定、カスタム試薬、レシピテンプレートの包括的なインポート/エクスポート機能',
+			cls: 'setting-item-description'
+		});
+
+		new Setting(containerEl)
+			.setName('インポート/エクスポート管理')
+			.setDesc('設定、カスタム試薬、レシピテンプレートを一括でインポート/エクスポートします')
+			.addButton((button: ButtonComponent) => {
+				button
+					.setButtonText('管理画面を開く')
+					.setClass('mod-cta')
+					.onClick(() => {
+						const modal = new SettingsImportExportModal(
+							this.app,
+							this.plugin.settings,
+							this.plugin.settings.customReagents || [],
+							this.plugin.settings.recipeTemplates || [],
+							async (newSettings: BufferCalcSettings) => {
+								this.plugin.settings = newSettings;
+								await this.plugin.saveSettings();
+								this.display();
+								new Notice('設定が更新されました');
+							}
+						);
+						modal.open();
 					});
 			});
 	}
@@ -228,43 +440,43 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		const { containerEl } = this;
 
 		// Data Management Section
-		containerEl.createEl('h2', { text: 'Data Management' });
+		containerEl.createEl('h2', { text: 'データ管理' });
 
 		new Setting(containerEl)
-			.setName('Export settings')
-			.setDesc('Export your plugin settings to a file')
+			.setName('設定をエクスポート')
+			.setDesc('プラグイン設定をファイルに出力します')
 			.addButton((button: ButtonComponent) => {
 				button
-					.setButtonText('Export')
+					.setButtonText('エクスポート')
 					.onClick(() => {
 						this.exportSettings();
 					});
 			});
 
 		new Setting(containerEl)
-			.setName('Import settings')
-			.setDesc('Import plugin settings from a file')
+			.setName('設定をインポート')
+			.setDesc('ファイルからプラグイン設定を読み込みます')
 			.addButton((button: ButtonComponent) => {
 				button
-					.setButtonText('Import')
+					.setButtonText('インポート')
 					.onClick(() => {
 						this.importSettings();
 					});
 			});
 
 		new Setting(containerEl)
-			.setName('Reset to defaults')
-			.setDesc('Reset all settings to their default values')
+			.setName('設定をリセット')
+			.setDesc('すべての設定をデフォルト値にリセットします')
 			.addButton((button: ButtonComponent) => {
 				button
-					.setButtonText('Reset')
+					.setButtonText('リセット')
 					.setClass('mod-destructive')
 					.onClick(async () => {
-						if (confirm('Are you sure you want to reset all settings to defaults? This cannot be undone.')) {
+						if (confirm('すべての設定をデフォルトにリセットしますか？この操作は取り消せません。')) {
 							this.plugin.settings = { ...this.plugin.settings, ...require('./types').DEFAULT_SETTINGS };
 							await this.plugin.saveSettings();
 							this.display();
-							new Notice('Settings reset to defaults');
+							new Notice('設定をデフォルトにリセットしました');
 						}
 					});
 			});
@@ -274,6 +486,7 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 		const modal = new ReagentEditorModal(
 			this.app,
 			reagent,
+			this.plugin.settings,
 			async (updatedReagent: Reagent) => {
 				if (index >= 0) {
 					// Edit existing
@@ -284,7 +497,7 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 				}
 				await this.plugin.saveSettings();
 				callback();
-				new Notice(`Reagent ${reagent ? 'updated' : 'added'} successfully`);
+				new Notice(`試薬を${reagent ? '更新' : '追加'}しました`);
 			}
 		);
 		modal.open();
@@ -304,9 +517,9 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 			
-			new Notice('Settings exported successfully');
+			new Notice('設定をエクスポートしました');
 		} catch (error) {
-			new Notice('Failed to export settings');
+			new Notice('設定のエクスポートに失敗しました');
 			console.error('Export error:', error);
 		}
 	}
@@ -327,9 +540,9 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 					this.plugin.settings = { ...this.plugin.settings, ...imported };
 					await this.plugin.saveSettings();
 					this.display();
-					new Notice('Settings imported successfully');
+					new Notice('設定をインポートしました');
 				} catch (error) {
-					new Notice('Invalid settings file');
+					new Notice('無効な設定ファイルです');
 					console.error('Import error:', error);
 				}
 			};
@@ -342,26 +555,28 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 
 class ReagentEditorModal extends Modal {
 	reagent: Reagent | null;
+	settings: BufferCalcSettings;
 	onSave: (reagent: Reagent) => void;
 	private nameInput: TextComponent;
 	private mwInput: TextComponent;
 	private casInput: TextComponent;
-	private categoryInput: TextComponent;
+	private categorySelect: DropdownComponent;
 
-	constructor(app: App, reagent: Reagent | null, onSave: (reagent: Reagent) => void) {
+	constructor(app: App, reagent: Reagent | null, settings: BufferCalcSettings, onSave: (reagent: Reagent) => void) {
 		super(app);
 		this.reagent = reagent;
+		this.settings = settings;
 		this.onSave = onSave;
 	}
 
 	onOpen(): void {
 		const { contentEl } = this;
-		contentEl.createEl('h2', { text: this.reagent ? 'Edit Reagent' : 'Add New Reagent' });
+		contentEl.createEl('h2', { text: this.reagent ? '試薬を編集' : '新しい試薬を追加' });
 
 		// Name field
 		new Setting(contentEl)
-			.setName('Reagent name')
-			.setDesc('Common name of the reagent')
+			.setName('試薬名')
+			.setDesc('試薬の一般名')
 			.addText((text: TextComponent) => {
 				this.nameInput = text;
 				text.setValue(this.reagent?.name || '')
@@ -370,8 +585,8 @@ class ReagentEditorModal extends Modal {
 
 		// Molecular weight field
 		new Setting(contentEl)
-			.setName('Molecular weight')
-			.setDesc('Molecular weight in g/mol')
+			.setName('分子量')
+			.setDesc('分子量（g/mol）')
 			.addText((text: TextComponent) => {
 				this.mwInput = text;
 				text.setValue(this.reagent?.molecularWeight?.toString() || '')
@@ -380,8 +595,8 @@ class ReagentEditorModal extends Modal {
 
 		// CAS number (optional)
 		new Setting(contentEl)
-			.setName('CAS number')
-			.setDesc('CAS registry number (optional)')
+			.setName('CAS番号')
+			.setDesc('CAS登録番号（任意）')
 			.addText((text: TextComponent) => {
 				this.casInput = text;
 				text.setValue(this.reagent?.cas || '')
@@ -390,21 +605,32 @@ class ReagentEditorModal extends Modal {
 
 		// Category (optional)
 		new Setting(contentEl)
-			.setName('Category')
-			.setDesc('Reagent category (optional)')
-			.addText((text: TextComponent) => {
-				this.categoryInput = text;
-				text.setValue(this.reagent?.category || '')
-					.setPlaceholder('e.g., Buffer, Salt, Enzyme');
+			.setName('カテゴリー')
+			.setDesc('試薬のカテゴリー（オプション）')
+			.addDropdown((dropdown: DropdownComponent) => {
+				this.categorySelect = dropdown;
+				
+				// カテゴリーオプションを追加
+				dropdown.addOption('', 'カテゴリーなし');
+				
+				const allCategories = CategoryManager.getAllCategories(this.settings);
+				allCategories.forEach(category => {
+					dropdown.addOption(category.id, `${category.icon || '📂'} ${category.name}`);
+				});
+				
+				// 現在の値を設定（自動推定も含む）
+				const currentCategory = this.reagent?.category || '';
+				const suggestedCategory = this.reagent ? '' : CategoryManager.suggestCategory(this.nameInput?.getValue() || '');
+				dropdown.setValue(currentCategory || suggestedCategory);
 			});
 
 		// Buttons
 		const buttonContainer = contentEl.createEl('div', { cls: 'buffer-calc-modal-buttons' });
 
-		const saveButton = buttonContainer.createEl('button', { text: 'Save', cls: 'mod-cta' });
+		const saveButton = buttonContainer.createEl('button', { text: '保存', cls: 'mod-cta' });
 		saveButton.addEventListener('click', () => this.save());
 
-		const cancelButton = buttonContainer.createEl('button', { text: 'Cancel' });
+		const cancelButton = buttonContainer.createEl('button', { text: 'キャンセル' });
 		cancelButton.addEventListener('click', () => this.close());
 	}
 
@@ -413,12 +639,12 @@ class ReagentEditorModal extends Modal {
 		const mw = parseFloat(this.mwInput.getValue());
 
 		if (!name) {
-			new Notice('Please enter a reagent name');
+			new Notice('試薬名を入力してください');
 			return;
 		}
 
 		if (isNaN(mw) || mw <= 0) {
-			new Notice('Please enter a valid molecular weight');
+			new Notice('有効な分子量を入力してください');
 			return;
 		}
 
@@ -426,7 +652,7 @@ class ReagentEditorModal extends Modal {
 			name: name,
 			molecularWeight: mw,
 			cas: this.casInput.getValue().trim() || undefined,
-			category: this.categoryInput.getValue().trim() || undefined
+			category: this.categorySelect.getValue() || undefined
 		};
 
 		this.onSave(reagent);

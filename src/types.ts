@@ -8,6 +8,11 @@ export interface BufferCalcSettings {
 	defaultTemplate: string;
 	recipeTemplates: RecipeTemplate[];
 	enableTemplates: boolean;
+	calculationHistory: CalculationHistoryEntry[];
+	enableHistory: boolean;
+	maxHistoryEntries: number;
+	customReagentCategories: ReagentCategory[];
+	enableCustomCategories: boolean;
 }
 
 export interface Reagent {
@@ -220,6 +225,80 @@ export interface ExportOptions {
 	includeMetadata: boolean;
 }
 
+export interface SettingsExportData {
+	version: string;
+	exportDate: string;
+	settings: BufferCalcSettings;
+	customReagents: Reagent[];
+	recipeTemplates: RecipeTemplate[];
+	metadata: {
+		pluginVersion: string;
+		exportSource: string;
+		totalTemplates: number;
+		totalCustomReagents: number;
+	};
+}
+
+export interface ImportResult {
+	success: boolean;
+	message: string;
+	warnings?: string[];
+	importedSettings?: boolean;
+	importedReagents?: number;
+	importedTemplates?: number;
+}
+
+export interface CalculationHistoryEntry {
+	id: string;
+	timestamp: Date;
+	type: 'buffer' | 'stock' | 'dilution';
+	name: string;
+	inputData: BufferCalcData;
+	result: CalculationResult;
+	notes?: string;
+	tags?: string[];
+	starred: boolean;
+}
+
+export interface HistoryFilter {
+	type?: 'buffer' | 'stock' | 'dilution' | 'all';
+	dateRange?: {
+		start: Date;
+		end: Date;
+	};
+	searchQuery?: string;
+	tags?: string[];
+	starred?: boolean;
+}
+
+export interface HistoryStats {
+	totalCalculations: number;
+	bufferCalculations: number;
+	stockCalculations: number;
+	dilutionCalculations: number;
+	averageCalculationsPerDay: number;
+	mostUsedReagents: { name: string; count: number }[];
+	recentActivity: { date: string; count: number }[];
+}
+
+export interface ReagentCategory {
+	id: string;
+	name: string;
+	description?: string;
+	color?: string;
+	icon?: string;
+	isBuiltIn: boolean;
+	createdAt: Date;
+	reagentCount?: number;
+}
+
+export interface CategoryStats {
+	categoryId: string;
+	categoryName: string;
+	reagentCount: number;
+	recentlyUsed: string[];
+}
+
 export const DEFAULT_SETTINGS: BufferCalcSettings = {
 	defaultVolumeUnit: VolumeUnit.MILLILITER,
 	defaultConcentrationUnit: ConcentrationUnit.MILLIMOLAR,
@@ -229,7 +308,12 @@ export const DEFAULT_SETTINGS: BufferCalcSettings = {
 	customReagents: [],
 	defaultTemplate: 'buffer',
 	recipeTemplates: [],
-	enableTemplates: true
+	enableTemplates: true,
+	calculationHistory: [],
+	enableHistory: true,
+	maxHistoryEntries: 100,
+	customReagentCategories: [],
+	enableCustomCategories: true
 };
 
 export const VOLUME_CONVERSION_FACTORS: Record<VolumeUnit, number> = {
