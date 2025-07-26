@@ -78,7 +78,7 @@
       }
     ],
     "direction": "horizontal",
-    "width": 300
+    "width": 200
   },
   "right": {
     "id": "7f8a9b0c1d2e3f4g",
@@ -156,6 +156,7 @@
   },
   "active": "ad17307bcb492fca",
   "lastOpenFiles": [
+    "コマンドテスト.md",
     "テスト.md",
     "README.md",
     "濃度入力形式テスト.md",

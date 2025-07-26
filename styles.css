@@ -430,6 +430,7 @@
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
+    flex-wrap: wrap; /* Allow wrapping when needed */
 }
 
 .buffer-calc-section {
@@ -442,11 +443,13 @@
 .buffer-calc-input-group label {
     font-weight: 500;
     color: var(--text-normal);
-    min-width: 120px;
+    min-width: fit-content;
     font-size: 0.9em;
+    white-space: nowrap;
 }
 
 /* Input styles */
+.buffer-calc-input,
 .buffer-calc-input-number,
 .buffer-calc-reagent-input,
 .buffer-calc-lot-input {
@@ -457,6 +460,9 @@
     color: var(--text-normal);
     font-size: 0.9em;
     min-width: 80px;
+    height: 28px;
+    line-height: 1.4;
+    box-sizing: border-box;
 }
 
 .buffer-calc-reagent-input {
@@ -464,6 +470,7 @@
     flex: 1;
 }
 
+.buffer-calc-input:focus,
 .buffer-calc-input-number:focus,
 .buffer-calc-reagent-input:focus,
 .buffer-calc-lot-input:focus {
@@ -472,14 +479,18 @@
     box-shadow: 0 0 0 2px var(--interactive-accent-rgb-low);
 }
 
+.buffer-calc-select,
 .buffer-calc-unit-select {
-    padding: 4px 6px;
+    padding: 4px 8px;
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
     background-color: var(--background-primary);
     color: var(--text-normal);
     font-size: 0.9em;
     cursor: pointer;
+    height: 28px;
+    line-height: 1.4;
+    box-sizing: border-box;
 }
 
 .buffer-calc-unit-select:focus {
@@ -743,11 +754,62 @@
     }
 }
 
+/* 中間サイズ用 (半分表示など) */
+@media (max-width: 900px) {
+    .buffer-calc-input-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+    
+    /* Exception: Keep exponential input containers horizontal */
+    .exponential-input-container {
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+    }
+    
+    .buffer-calc-input-group label {
+        min-width: auto;
+        margin-bottom: 2px;
+    }
+    
+    .serial-dilution-target-settings {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .exponential-input {
+        width: 55px !important;
+    }
+}
+
+/* 小さめタブレット用 */
+@media (max-width: 600px) {
+    .exponential-input {
+        width: 50px !important;
+    }
+    
+    .serial-dilution-target-buttons {
+        flex-direction: column;
+        gap: 0.125rem;
+    }
+}
+
 /* モバイル用 (最大768px) */
 @media (max-width: 768px) {
     .buffer-calc-container {
         padding: 12px;
         margin: 4px 0;
+    }
+    
+    /* Ensure exponential input stays horizontal on mobile */
+    .exponential-input-container {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        flex-wrap: nowrap !important;
+        min-width: 110px;
     }
     
     .buffer-calc-title {
@@ -2183,30 +2245,96 @@
 	flex: 1;
 }
 
-/* Exponential Input Styles */
+/* Exponential Input Styles - Maximum priority to prevent line breaks */
 .exponential-input-container {
-	display: flex;
-	align-items: center;
-	gap: 0.25rem;
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	gap: 0.25rem !important;
 	flex: 1;
+	min-width: 120px !important;
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	flex-wrap: nowrap !important;
+	position: relative !important;
+}
+
+/* Highest priority selectors to override any parent influence */
+.serial-dilution-target-row .exponential-input-container {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	flex-wrap: nowrap !important;
+	gap: 0.25rem !important;
+	min-width: 120px !important;
 }
 
 .exponential-prefix {
-	font-size: 1rem;
+	font-size: 0.9em;
 	font-weight: 500;
 	color: var(--text-normal);
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	display: inline-block !important;
+	line-height: 1.4;
 }
 
 .exponential-input {
 	width: 60px !important;
 	flex: none !important;
+	flex-shrink: 0 !important;
+	display: inline-block !important;
+	font-size: 0.9em;
+	height: 28px;
+	padding: 4px 6px;
 }
 
 .exponential-unit {
-	font-size: 1rem;
+	font-size: 0.9em;
 	font-weight: 500;
 	color: var(--text-normal);
 	margin-left: 0.25rem;
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	display: inline-block !important;
+	line-height: 1.4;
+}
+
+/* Maximum priority for individual elements in target rows */
+.serial-dilution-target-row .exponential-prefix,
+.serial-dilution-target-row .exponential-input,
+.serial-dilution-target-row .exponential-unit {
+	display: inline-block !important;
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+}
+
+/* Force horizontal layout at ALL breakpoints - no exceptions */
+@media (max-width: 900px), (max-width: 768px), (max-width: 600px), (max-width: 480px) {
+	.exponential-input-container {
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		flex-wrap: nowrap !important;
+		gap: 0.25rem !important;
+		min-width: 110px !important;
+	}
+	
+	.serial-dilution-target-row .exponential-input-container {
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		flex-wrap: nowrap !important;
+		gap: 0.25rem !important;
+	}
+	
+	.exponential-prefix,
+	.exponential-input,
+	.exponential-unit {
+		display: inline-block !important;
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+	}
 }
 
 /* Responsive adjustments for target buttons */

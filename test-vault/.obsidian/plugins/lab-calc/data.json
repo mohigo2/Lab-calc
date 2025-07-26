@@ -10,6 +10,79 @@
   "enableTemplates": true,
   "calculationHistory": [
     {
+      "id": "hist_1753571574858_kdzecpymi",
+      "timestamp": "2025-07-26T23:12:54.858Z",
+      "type": "buffer",
+      "name": "My Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris-HCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 150,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "My Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "My Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T23:12:54.856Z",
+          "updatedAt": "2025-07-26T23:12:54.856Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris-HCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.05,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "50 mL",
+            "percentOfTotal": 5
+          },
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 150,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.03,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "30 mL",
+            "percentOfTotal": 3
+          }
+        ],
+        "solventVolume": 920,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
       "id": "hist_1753504144752_zmiqyu1zg",
       "timestamp": "2025-07-26T04:29:04.752Z",
       "type": "buffer",

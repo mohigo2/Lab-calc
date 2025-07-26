@@ -1429,11 +1429,7 @@ export class BufferCalcUI {
 		const targetUnitSelect = targetUnitRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
 		this.populateConcentrationUnits(targetUnitSelect, data.targetUnit);
 
-		// Add concentration button
-		const addConcentrationBtn = targetSection.createEl('button', {
-			text: '+ 最後に追加',
-			cls: 'buffer-calc-button buffer-calc-button-secondary'
-		});
+		// Add concentration button removed per user request
 
 		// Display format section
 		const displaySection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
@@ -1502,13 +1498,7 @@ export class BufferCalcUI {
 		});
 
 
-		addConcentrationBtn.addEventListener('click', () => {
-			data.targetConcentrations = data.targetConcentrations || [];
-			data.targetConcentrations.push(1);
-			data.targetInputMode = inputModeSelect.value as ConcentrationInputMode;
-			this.renderTargetConcentrations(targetConcentrationsContainer, data);
-			recalculate();
-		});
+		// addConcentrationBtn event listener removed per user request
 
 		// Initial rendering and calculation
 		this.renderTargetConcentrations(targetConcentrationsContainer, data);
@@ -1531,7 +1521,19 @@ export class BufferCalcUI {
 				// Exponential input mode: show coefficient input and M unit
 				const exponentialContainer = concentrationRow.createEl('div', { cls: 'exponential-input-container' });
 				
-				exponentialContainer.createEl('span', { text: '10^', cls: 'exponential-prefix' });
+				// Force horizontal layout with inline styles (final solution)
+				exponentialContainer.style.display = 'flex';
+				exponentialContainer.style.flexDirection = 'row';
+				exponentialContainer.style.alignItems = 'center';
+				exponentialContainer.style.flexWrap = 'nowrap';
+				exponentialContainer.style.gap = '0.25rem';
+				exponentialContainer.style.minWidth = '120px';
+				exponentialContainer.style.whiteSpace = 'nowrap';
+				
+				const prefixSpan = exponentialContainer.createEl('span', { text: '10^', cls: 'exponential-prefix' });
+				prefixSpan.style.flexShrink = '0';
+				prefixSpan.style.whiteSpace = 'nowrap';
+				prefixSpan.style.display = 'inline-block';
 				
 				const exponentInput = exponentialContainer.createEl('input', {
 					type: 'number',
@@ -1539,8 +1541,13 @@ export class BufferCalcUI {
 					cls: 'buffer-calc-input exponential-input',
 					attr: { step: '0.1', placeholder: '-6' }
 				}) as HTMLInputElement;
+				exponentInput.style.flexShrink = '0';
+				exponentInput.style.display = 'inline-block';
 				
-				exponentialContainer.createEl('span', { text: ' M', cls: 'exponential-unit' });
+				const unitSpan = exponentialContainer.createEl('span', { text: ' M', cls: 'exponential-unit' });
+				unitSpan.style.flexShrink = '0';
+				unitSpan.style.whiteSpace = 'nowrap';
+				unitSpan.style.display = 'inline-block';
 				
 				// Store reference for event handling
 				(concentrationRow as any).concentrationInput = exponentInput;

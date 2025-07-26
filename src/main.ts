@@ -101,6 +101,38 @@ export default class BufferCalcPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id: 'insert-stock-calc',
+			name: 'Insert Stock Solution Calculation',
+			callback: () => {
+				this.insertStockCalcBlock();
+			}
+		});
+
+		this.addCommand({
+			id: 'insert-dilution-calc',
+			name: 'Insert Dilution Calculation',
+			callback: () => {
+				this.insertDilutionCalcBlock();
+			}
+		});
+
+		this.addCommand({
+			id: 'insert-serial-dilution-calc',
+			name: 'Insert Serial Dilution Calculation',
+			callback: () => {
+				this.insertSerialDilutionCalcBlock();
+			}
+		});
+
+		this.addCommand({
+			id: 'insert-calculation',
+			name: 'Insert Calculation (Select Type)',
+			callback: () => {
+				this.insertCalculationWithTypeSelector();
+			}
+		});
+
+		this.addCommand({
 			id: 'open-recipe-manager',
 			name: 'Open Recipe Manager',
 			callback: () => {
@@ -150,6 +182,10 @@ export default class BufferCalcPlugin extends Plugin {
 		console.log('Buffer Calc plugin loaded successfully - ALL COMMANDS REGISTERED');
 		console.log('Registered commands:', [
 			'insert-buffer-calc',
+			'insert-stock-calc',
+			'insert-dilution-calc',
+			'insert-serial-dilution-calc',
+			'insert-calculation',
 			'open-recipe-manager', 
 			'manage-reagents',
 			'insert-from-template',
@@ -434,6 +470,137 @@ components:
 		}
 	}
 
+	private insertStockCalcBlock() {
+		try {
+			console.log('Inserting stock calc block...');
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			
+			if (activeView && 'editor' in activeView) {
+				const editor = (activeView as any).editor;
+				const cursor = editor.getCursor();
+				
+				const template = `\`\`\`stock
+name: Stock Solution
+reagentName: 試薬名
+molecularWeight: 342.3
+targetConcentration: 100
+concentrationUnit: mM
+volume: 10
+volumeUnit: mL
+purity: 95
+solvent: 水
+\`\`\``;
+
+				editor.replaceRange(template, cursor);
+				editor.setCursor(cursor.line + 1, 0);
+				new Notice('ストック溶液計算ブロックを挿入しました');
+			} else {
+				new Notice('ノートを開いてからストック溶液計算を挿入してください');
+			}
+		} catch (error) {
+			console.error('Error inserting stock calc block:', error);
+			new Notice('ストック溶液計算挿入でエラーが発生しました: ' + error.message);
+		}
+	}
+
+	private insertDilutionCalcBlock() {
+		try {
+			console.log('Inserting dilution calc block...');
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			
+			if (activeView && 'editor' in activeView) {
+				const editor = (activeView as any).editor;
+				const cursor = editor.getCursor();
+				
+				const template = `\`\`\`dilution
+name: Simple Dilution
+stockConcentration: 1000
+stockConcentrationUnit: mM
+finalConcentration: 100
+finalConcentrationUnit: mM
+finalVolume: 100
+volumeUnit: µL
+\`\`\``;
+
+				editor.replaceRange(template, cursor);
+				editor.setCursor(cursor.line + 1, 0);
+				new Notice('希釈計算ブロックを挿入しました');
+			} else {
+				new Notice('ノートを開いてから希釈計算を挿入してください');
+			}
+		} catch (error) {
+			console.error('Error inserting dilution calc block:', error);
+			new Notice('希釈計算挿入でエラーが発生しました: ' + error.message);
+		}
+	}
+
+	private insertSerialDilutionCalcBlock() {
+		try {
+			console.log('Inserting serial dilution calc block...');
+			const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+			
+			if (activeView && 'editor' in activeView) {
+				const editor = (activeView as any).editor;
+				const cursor = editor.getCursor();
+				
+				const template = `\`\`\`serial-dilution
+name: Serial Dilution Protocol
+stockConcentration: 10
+stockUnit: mM
+cellVolume: 200
+cellVolumeUnit: µL
+additionVolume: 2
+additionVolumeUnit: µL
+dilutionVolume: 200
+dilutionVolumeUnit: µL
+targetConcentrations: [100, 10, 1, 0.1]
+targetUnit: µM
+targetInputMode: exponential
+stepDisplayFormat: text
+\`\`\``;
+
+				editor.replaceRange(template, cursor);
+				editor.setCursor(cursor.line + 1, 0);
+				new Notice('段階希釈計算ブロックを挿入しました');
+			} else {
+				new Notice('ノートを開いてから段階希釈計算を挿入してください');
+			}
+		} catch (error) {
+			console.error('Error inserting serial dilution calc block:', error);
+			new Notice('段階希釈計算挿入でエラーが発生しました: ' + error.message);
+		}
+	}
+
+	private insertCalculationWithTypeSelector() {
+		try {
+			console.log('Opening calculation type selector...');
+			const typeSelectorModal = new CalculationTypeSelectorModal(
+				this.app,
+				(type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution') => {
+					console.log('Calculation type selected:', type);
+					switch (type) {
+						case 'buffer':
+							this.insertBufferCalcBlock();
+							break;
+						case 'stock':
+							this.insertStockCalcBlock();
+							break;
+						case 'dilution':
+							this.insertDilutionCalcBlock();
+							break;
+						case 'serial-dilution':
+							this.insertSerialDilutionCalcBlock();
+							break;
+					}
+				}
+			);
+			typeSelectorModal.open();
+		} catch (error) {
+			console.error('Error opening calculation type selector:', error);
+			new Notice('計算タイプ選択でエラーが発生しました: ' + error.message);
+		}
+	}
+
 	private insertFromTemplate() {
 		try {
 			console.log('Opening template selector...');
@@ -685,6 +852,105 @@ class ReagentManagerModal extends Modal {
 		const { contentEl } = this;
 		contentEl.createEl('h2', { text: 'Manage Custom Reagents' });
 		contentEl.createEl('p', { text: 'Reagent management functionality will be implemented here.' });
+	}
+
+	onClose() {
+		const { contentEl } = this;
+		contentEl.empty();
+	}
+}
+
+class CalculationTypeSelectorModal extends Modal {
+	onSelectCallback: (type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution') => void;
+
+	constructor(app: App, onSelectCallback: (type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution') => void) {
+		super(app);
+		this.onSelectCallback = onSelectCallback;
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		contentEl.createEl('h2', { text: '計算タイプを選択', cls: 'modal-title' });
+
+		const buttonContainer = contentEl.createDiv({ cls: 'calculation-type-buttons' });
+
+		// Buffer Calculation
+		const bufferButton = buttonContainer.createEl('button', {
+			text: 'バッファー計算',
+			cls: 'mod-cta calculation-type-button'
+		});
+		bufferButton.createDiv({ text: 'Multi-component buffer preparation', cls: 'button-description' });
+		bufferButton.onclick = () => {
+			this.close();
+			this.onSelectCallback('buffer');
+		};
+
+		// Stock Solution Calculation
+		const stockButton = buttonContainer.createEl('button', {
+			text: 'ストック溶液計算',
+			cls: 'mod-cta calculation-type-button'
+		});
+		stockButton.createDiv({ text: 'Mass calculation for stock solutions', cls: 'button-description' });
+		stockButton.onclick = () => {
+			this.close();
+			this.onSelectCallback('stock');
+		};
+
+		// Dilution Calculation
+		const dilutionButton = buttonContainer.createEl('button', {
+			text: '希釈計算',
+			cls: 'mod-cta calculation-type-button'
+		});
+		dilutionButton.createDiv({ text: 'Simple C1V1=C2V2 dilutions', cls: 'button-description' });
+		dilutionButton.onclick = () => {
+			this.close();
+			this.onSelectCallback('dilution');
+		};
+
+		// Serial Dilution Calculation
+		const serialDilutionButton = buttonContainer.createEl('button', {
+			text: '段階希釈計算',
+			cls: 'mod-cta calculation-type-button'
+		});
+		serialDilutionButton.createDiv({ text: 'Multi-step serial dilution protocols', cls: 'button-description' });
+		serialDilutionButton.onclick = () => {
+			this.close();
+			this.onSelectCallback('serial-dilution');
+		};
+
+		// Add some CSS for better styling
+		const style = contentEl.createEl('style');
+		style.textContent = `
+			.calculation-type-buttons {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 1rem;
+				margin-top: 1rem;
+			}
+			.calculation-type-button {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				padding: 1rem;
+				border: 1px solid var(--background-modifier-border);
+				border-radius: 6px;
+				background: var(--background-primary);
+				cursor: pointer;
+				transition: all 0.2s ease;
+				min-height: 80px;
+				justify-content: center;
+			}
+			.calculation-type-button:hover {
+				background: var(--background-modifier-hover);
+				border-color: var(--interactive-accent);
+			}
+			.button-description {
+				font-size: 0.8rem;
+				color: var(--text-muted);
+				margin-top: 0.5rem;
+				text-align: center;
+			}
+		`;
 	}
 
 	onClose() {

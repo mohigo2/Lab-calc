@@ -5867,10 +5867,6 @@ var BufferCalcUI = class {
     targetUnitRow.createEl("label", { text: "\u6FC3\u5EA6\u5358\u4F4D:", cls: "buffer-calc-label" });
     const targetUnitSelect = targetUnitRow.createEl("select", { cls: "buffer-calc-select" });
     this.populateConcentrationUnits(targetUnitSelect, data.targetUnit);
-    const addConcentrationBtn = targetSection.createEl("button", {
-      text: "+ \u6700\u5F8C\u306B\u8FFD\u52A0",
-      cls: "buffer-calc-button buffer-calc-button-secondary"
-    });
     const displaySection = controls.createEl("div", { cls: "buffer-calc-input-group" });
     const displayFormatRow = displaySection.createEl("div", { cls: "buffer-calc-input-row" });
     displayFormatRow.createEl("label", { text: "\u624B\u9806\u8868\u793A:", cls: "buffer-calc-label" });
@@ -5926,13 +5922,6 @@ var BufferCalcUI = class {
       this.renderTargetConcentrations(targetConcentrationsContainer, data);
       recalculate();
     });
-    addConcentrationBtn.addEventListener("click", () => {
-      data.targetConcentrations = data.targetConcentrations || [];
-      data.targetConcentrations.push(1);
-      data.targetInputMode = inputModeSelect.value;
-      this.renderTargetConcentrations(targetConcentrationsContainer, data);
-      recalculate();
-    });
     this.renderTargetConcentrations(targetConcentrationsContainer, data);
     recalculate();
   }
@@ -5946,14 +5935,29 @@ var BufferCalcUI = class {
       const isExponentialMode = data.targetInputMode === "exponential" /* EXPONENTIAL */;
       if (isExponentialMode) {
         const exponentialContainer = concentrationRow.createEl("div", { cls: "exponential-input-container" });
-        exponentialContainer.createEl("span", { text: "10^", cls: "exponential-prefix" });
+        exponentialContainer.style.display = "flex";
+        exponentialContainer.style.flexDirection = "row";
+        exponentialContainer.style.alignItems = "center";
+        exponentialContainer.style.flexWrap = "nowrap";
+        exponentialContainer.style.gap = "0.25rem";
+        exponentialContainer.style.minWidth = "120px";
+        exponentialContainer.style.whiteSpace = "nowrap";
+        const prefixSpan = exponentialContainer.createEl("span", { text: "10^", cls: "exponential-prefix" });
+        prefixSpan.style.flexShrink = "0";
+        prefixSpan.style.whiteSpace = "nowrap";
+        prefixSpan.style.display = "inline-block";
         const exponentInput = exponentialContainer.createEl("input", {
           type: "number",
           value: this.concentrationToExponent(concentration).toString(),
           cls: "buffer-calc-input exponential-input",
           attr: { step: "0.1", placeholder: "-6" }
         });
-        exponentialContainer.createEl("span", { text: " M", cls: "exponential-unit" });
+        exponentInput.style.flexShrink = "0";
+        exponentInput.style.display = "inline-block";
+        const unitSpan = exponentialContainer.createEl("span", { text: " M", cls: "exponential-unit" });
+        unitSpan.style.flexShrink = "0";
+        unitSpan.style.whiteSpace = "nowrap";
+        unitSpan.style.display = "inline-block";
         concentrationRow.concentrationInput = exponentInput;
       } else {
         const concentrationInput2 = concentrationRow.createEl("input", {
@@ -6977,6 +6981,34 @@ var BufferCalcPlugin = class extends import_obsidian10.Plugin {
       }
     });
     this.addCommand({
+      id: "insert-stock-calc",
+      name: "Insert Stock Solution Calculation",
+      callback: () => {
+        this.insertStockCalcBlock();
+      }
+    });
+    this.addCommand({
+      id: "insert-dilution-calc",
+      name: "Insert Dilution Calculation",
+      callback: () => {
+        this.insertDilutionCalcBlock();
+      }
+    });
+    this.addCommand({
+      id: "insert-serial-dilution-calc",
+      name: "Insert Serial Dilution Calculation",
+      callback: () => {
+        this.insertSerialDilutionCalcBlock();
+      }
+    });
+    this.addCommand({
+      id: "insert-calculation",
+      name: "Insert Calculation (Select Type)",
+      callback: () => {
+        this.insertCalculationWithTypeSelector();
+      }
+    });
+    this.addCommand({
       id: "open-recipe-manager",
       name: "Open Recipe Manager",
       callback: () => {
@@ -7021,6 +7053,10 @@ var BufferCalcPlugin = class extends import_obsidian10.Plugin {
     console.log("Buffer Calc plugin loaded successfully - ALL COMMANDS REGISTERED");
     console.log("Registered commands:", [
       "insert-buffer-calc",
+      "insert-stock-calc",
+      "insert-dilution-calc",
+      "insert-serial-dilution-calc",
+      "insert-calculation",
       "open-recipe-manager",
       "manage-reagents",
       "insert-from-template",
@@ -7248,6 +7284,124 @@ components:
       new import_obsidian10.Notice("\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97\u633F\u5165\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F: " + error.message);
     }
   }
+  insertStockCalcBlock() {
+    try {
+      console.log("Inserting stock calc block...");
+      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian10.MarkdownView);
+      if (activeView && "editor" in activeView) {
+        const editor = activeView.editor;
+        const cursor = editor.getCursor();
+        const template = `\`\`\`stock
+name: Stock Solution
+reagentName: \u8A66\u85AC\u540D
+molecularWeight: 342.3
+targetConcentration: 100
+concentrationUnit: mM
+volume: 10
+volumeUnit: mL
+purity: 95
+solvent: \u6C34
+\`\`\``;
+        editor.replaceRange(template, cursor);
+        editor.setCursor(cursor.line + 1, 0);
+        new import_obsidian10.Notice("\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97\u30D6\u30ED\u30C3\u30AF\u3092\u633F\u5165\u3057\u307E\u3057\u305F");
+      } else {
+        new import_obsidian10.Notice("\u30CE\u30FC\u30C8\u3092\u958B\u3044\u3066\u304B\u3089\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044");
+      }
+    } catch (error) {
+      console.error("Error inserting stock calc block:", error);
+      new import_obsidian10.Notice("\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97\u633F\u5165\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F: " + error.message);
+    }
+  }
+  insertDilutionCalcBlock() {
+    try {
+      console.log("Inserting dilution calc block...");
+      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian10.MarkdownView);
+      if (activeView && "editor" in activeView) {
+        const editor = activeView.editor;
+        const cursor = editor.getCursor();
+        const template = `\`\`\`dilution
+name: Simple Dilution
+stockConcentration: 1000
+stockConcentrationUnit: mM
+finalConcentration: 100
+finalConcentrationUnit: mM
+finalVolume: 100
+volumeUnit: \xB5L
+\`\`\``;
+        editor.replaceRange(template, cursor);
+        editor.setCursor(cursor.line + 1, 0);
+        new import_obsidian10.Notice("\u5E0C\u91C8\u8A08\u7B97\u30D6\u30ED\u30C3\u30AF\u3092\u633F\u5165\u3057\u307E\u3057\u305F");
+      } else {
+        new import_obsidian10.Notice("\u30CE\u30FC\u30C8\u3092\u958B\u3044\u3066\u304B\u3089\u5E0C\u91C8\u8A08\u7B97\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044");
+      }
+    } catch (error) {
+      console.error("Error inserting dilution calc block:", error);
+      new import_obsidian10.Notice("\u5E0C\u91C8\u8A08\u7B97\u633F\u5165\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F: " + error.message);
+    }
+  }
+  insertSerialDilutionCalcBlock() {
+    try {
+      console.log("Inserting serial dilution calc block...");
+      const activeView = this.app.workspace.getActiveViewOfType(import_obsidian10.MarkdownView);
+      if (activeView && "editor" in activeView) {
+        const editor = activeView.editor;
+        const cursor = editor.getCursor();
+        const template = `\`\`\`serial-dilution
+name: Serial Dilution Protocol
+stockConcentration: 10
+stockUnit: mM
+cellVolume: 200
+cellVolumeUnit: \xB5L
+additionVolume: 2
+additionVolumeUnit: \xB5L
+dilutionVolume: 200
+dilutionVolumeUnit: \xB5L
+targetConcentrations: [100, 10, 1, 0.1]
+targetUnit: \xB5M
+targetInputMode: exponential
+stepDisplayFormat: text
+\`\`\``;
+        editor.replaceRange(template, cursor);
+        editor.setCursor(cursor.line + 1, 0);
+        new import_obsidian10.Notice("\u6BB5\u968E\u5E0C\u91C8\u8A08\u7B97\u30D6\u30ED\u30C3\u30AF\u3092\u633F\u5165\u3057\u307E\u3057\u305F");
+      } else {
+        new import_obsidian10.Notice("\u30CE\u30FC\u30C8\u3092\u958B\u3044\u3066\u304B\u3089\u6BB5\u968E\u5E0C\u91C8\u8A08\u7B97\u3092\u633F\u5165\u3057\u3066\u304F\u3060\u3055\u3044");
+      }
+    } catch (error) {
+      console.error("Error inserting serial dilution calc block:", error);
+      new import_obsidian10.Notice("\u6BB5\u968E\u5E0C\u91C8\u8A08\u7B97\u633F\u5165\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F: " + error.message);
+    }
+  }
+  insertCalculationWithTypeSelector() {
+    try {
+      console.log("Opening calculation type selector...");
+      const typeSelectorModal = new CalculationTypeSelectorModal(
+        this.app,
+        (type) => {
+          console.log("Calculation type selected:", type);
+          switch (type) {
+            case "buffer":
+              this.insertBufferCalcBlock();
+              break;
+            case "stock":
+              this.insertStockCalcBlock();
+              break;
+            case "dilution":
+              this.insertDilutionCalcBlock();
+              break;
+            case "serial-dilution":
+              this.insertSerialDilutionCalcBlock();
+              break;
+          }
+        }
+      );
+      typeSelectorModal.open();
+    } catch (error) {
+      console.error("Error opening calculation type selector:", error);
+      new import_obsidian10.Notice("\u8A08\u7B97\u30BF\u30A4\u30D7\u9078\u629E\u3067\u30A8\u30E9\u30FC\u304C\u767A\u751F\u3057\u307E\u3057\u305F: " + error.message);
+    }
+  }
   insertFromTemplate() {
     try {
       console.log("Opening template selector...");
@@ -7441,6 +7595,89 @@ var ReagentManagerModal = class extends import_obsidian10.Modal {
     const { contentEl } = this;
     contentEl.createEl("h2", { text: "Manage Custom Reagents" });
     contentEl.createEl("p", { text: "Reagent management functionality will be implemented here." });
+  }
+  onClose() {
+    const { contentEl } = this;
+    contentEl.empty();
+  }
+};
+var CalculationTypeSelectorModal = class extends import_obsidian10.Modal {
+  constructor(app, onSelectCallback) {
+    super(app);
+    this.onSelectCallback = onSelectCallback;
+  }
+  onOpen() {
+    const { contentEl } = this;
+    contentEl.createEl("h2", { text: "\u8A08\u7B97\u30BF\u30A4\u30D7\u3092\u9078\u629E", cls: "modal-title" });
+    const buttonContainer = contentEl.createDiv({ cls: "calculation-type-buttons" });
+    const bufferButton = buttonContainer.createEl("button", {
+      text: "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97",
+      cls: "mod-cta calculation-type-button"
+    });
+    bufferButton.createDiv({ text: "Multi-component buffer preparation", cls: "button-description" });
+    bufferButton.onclick = () => {
+      this.close();
+      this.onSelectCallback("buffer");
+    };
+    const stockButton = buttonContainer.createEl("button", {
+      text: "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97",
+      cls: "mod-cta calculation-type-button"
+    });
+    stockButton.createDiv({ text: "Mass calculation for stock solutions", cls: "button-description" });
+    stockButton.onclick = () => {
+      this.close();
+      this.onSelectCallback("stock");
+    };
+    const dilutionButton = buttonContainer.createEl("button", {
+      text: "\u5E0C\u91C8\u8A08\u7B97",
+      cls: "mod-cta calculation-type-button"
+    });
+    dilutionButton.createDiv({ text: "Simple C1V1=C2V2 dilutions", cls: "button-description" });
+    dilutionButton.onclick = () => {
+      this.close();
+      this.onSelectCallback("dilution");
+    };
+    const serialDilutionButton = buttonContainer.createEl("button", {
+      text: "\u6BB5\u968E\u5E0C\u91C8\u8A08\u7B97",
+      cls: "mod-cta calculation-type-button"
+    });
+    serialDilutionButton.createDiv({ text: "Multi-step serial dilution protocols", cls: "button-description" });
+    serialDilutionButton.onclick = () => {
+      this.close();
+      this.onSelectCallback("serial-dilution");
+    };
+    const style = contentEl.createEl("style");
+    style.textContent = `
+			.calculation-type-buttons {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+				gap: 1rem;
+				margin-top: 1rem;
+			}
+			.calculation-type-button {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				padding: 1rem;
+				border: 1px solid var(--background-modifier-border);
+				border-radius: 6px;
+				background: var(--background-primary);
+				cursor: pointer;
+				transition: all 0.2s ease;
+				min-height: 80px;
+				justify-content: center;
+			}
+			.calculation-type-button:hover {
+				background: var(--background-modifier-hover);
+				border-color: var(--interactive-accent);
+			}
+			.button-description {
+				font-size: 0.8rem;
+				color: var(--text-muted);
+				margin-top: 0.5rem;
+				text-align: center;
+			}
+		`;
   }
   onClose() {
     const { contentEl } = this;
