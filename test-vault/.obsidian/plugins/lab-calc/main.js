@@ -33,12 +33,13 @@ __export(types_exports, {
   ErrorType: () => ErrorType,
   MASS_CONVERSION_FACTORS: () => MASS_CONVERSION_FACTORS,
   MassUnit: () => MassUnit,
+  StepDisplayFormat: () => StepDisplayFormat,
   TemplateCategory: () => TemplateCategory,
   VOLUME_CONVERSION_FACTORS: () => VOLUME_CONVERSION_FACTORS,
   VolumeUnit: () => VolumeUnit,
   WarningType: () => WarningType
 });
-var VolumeUnit, ConcentrationUnit, MassUnit, WarningType, ErrorType, DEFAULT_SETTINGS, VOLUME_CONVERSION_FACTORS, MASS_CONVERSION_FACTORS, CONCENTRATION_CONVERSION_FACTORS, TemplateCategory;
+var VolumeUnit, ConcentrationUnit, MassUnit, WarningType, ErrorType, DEFAULT_SETTINGS, VOLUME_CONVERSION_FACTORS, MASS_CONVERSION_FACTORS, CONCENTRATION_CONVERSION_FACTORS, TemplateCategory, StepDisplayFormat;
 var init_types = __esm({
   "src/types.ts"() {
     VolumeUnit = /* @__PURE__ */ ((VolumeUnit2) => {
@@ -53,13 +54,6 @@ var init_types = __esm({
       ConcentrationUnit2["MILLIMOLAR"] = "mM";
       ConcentrationUnit2["MICROMOLAR"] = "\xB5M";
       ConcentrationUnit2["NANOMOLAR"] = "nM";
-      ConcentrationUnit2["PERCENT_W_V"] = "%(w/v)";
-      ConcentrationUnit2["PERCENT_W_W"] = "%(w/w)";
-      ConcentrationUnit2["PERCENT_V_V"] = "%(v/v)";
-      ConcentrationUnit2["MG_ML"] = "mg/mL";
-      ConcentrationUnit2["UG_ML"] = "\xB5g/mL";
-      ConcentrationUnit2["PPM"] = "ppm";
-      ConcentrationUnit2["PPB"] = "ppb";
       return ConcentrationUnit2;
     })(ConcentrationUnit || {});
     MassUnit = /* @__PURE__ */ ((MassUnit2) => {
@@ -124,14 +118,7 @@ var init_types = __esm({
       ["M" /* MOLAR */]: 1,
       ["mM" /* MILLIMOLAR */]: 1e3,
       ["\xB5M" /* MICROMOLAR */]: 1e6,
-      ["nM" /* NANOMOLAR */]: 1e9,
-      ["%(w/v)" /* PERCENT_W_V */]: 1,
-      ["%(w/w)" /* PERCENT_W_W */]: 1,
-      ["%(v/v)" /* PERCENT_V_V */]: 1,
-      ["mg/mL" /* MG_ML */]: 1,
-      ["\xB5g/mL" /* UG_ML */]: 1e3,
-      ["ppm" /* PPM */]: 1e6,
-      ["ppb" /* PPB */]: 1e9
+      ["nM" /* NANOMOLAR */]: 1e9
     };
     TemplateCategory = /* @__PURE__ */ ((TemplateCategory2) => {
       TemplateCategory2["COMMON_BUFFERS"] = "common_buffers";
@@ -142,6 +129,11 @@ var init_types = __esm({
       TemplateCategory2["CUSTOM"] = "custom";
       return TemplateCategory2;
     })(TemplateCategory || {});
+    StepDisplayFormat = /* @__PURE__ */ ((StepDisplayFormat2) => {
+      StepDisplayFormat2["TEXT"] = "text";
+      StepDisplayFormat2["TABLE"] = "table";
+      return StepDisplayFormat2;
+    })(StepDisplayFormat || {});
   }
 });
 
@@ -661,6 +653,7 @@ var HistoryManager = class {
     const bufferCalculations = history.filter((e) => e.type === "buffer").length;
     const stockCalculations = history.filter((e) => e.type === "stock").length;
     const dilutionCalculations = history.filter((e) => e.type === "dilution").length;
+    const serialDilutionCalculations = history.filter((e) => e.type === "serial-dilution").length;
     const recentHistory = history.filter((entry) => new Date(entry.timestamp) >= thirtyDaysAgo);
     const averageCalculationsPerDay = recentHistory.length / 30;
     const reagentCounts = /* @__PURE__ */ new Map();
@@ -694,6 +687,7 @@ var HistoryManager = class {
       bufferCalculations,
       stockCalculations,
       dilutionCalculations,
+      serialDilutionCalculations,
       averageCalculationsPerDay: Math.round(averageCalculationsPerDay * 10) / 10,
       mostUsedReagents,
       recentActivity
@@ -2704,12 +2698,7 @@ var BufferCalcSettingTab = class extends import_obsidian7.PluginSettingTab {
         ["M" /* MOLAR */]: "Molar (M)",
         ["mM" /* MILLIMOLAR */]: "Millimolar (mM)",
         ["\xB5M" /* MICROMOLAR */]: "Micromolar (\xB5M)",
-        ["nM" /* NANOMOLAR */]: "Nanomolar (nM)",
-        ["%(w/v)" /* PERCENT_W_V */]: "Percent (w/v)",
-        ["%(w/w)" /* PERCENT_W_W */]: "Percent (w/w)",
-        ["%(v/v)" /* PERCENT_V_V */]: "Percent (v/v)",
-        ["mg/mL" /* MG_ML */]: "mg/mL",
-        ["\xB5g/mL" /* UG_ML */]: "\xB5g/mL"
+        ["nM" /* NANOMOLAR */]: "Nanomolar (nM)"
       };
       for (const [key, value] of Object.entries(options)) {
         dropdown.addOption(key, value);
@@ -3129,16 +3118,7 @@ var ConversionUtils = class {
     if (!molecularWeight || molecularWeight <= 0) {
       throw new Error("Molecular weight is required to convert from mass-based concentrations to molarity");
     }
-    switch (unit) {
-      case "mg/mL" /* MG_ML */:
-        return value / (molecularWeight * 1e3);
-      case "\xB5g/mL" /* UG_ML */:
-        return value / (molecularWeight * 1e6);
-      case "%(w/v)" /* PERCENT_W_V */:
-        return value * 1e4 / (molecularWeight * 1e3);
-      default:
-        throw new Error(`Conversion from ${unit} to molarity not implemented`);
-    }
+    throw new Error(`Only M-series concentration units are supported`);
   }
   /**
    * Format number with appropriate decimal places
@@ -3201,30 +3181,7 @@ var ConversionUtils = class {
       "\xB5M" /* MICROMOLAR */,
       "nM" /* NANOMOLAR */
     ];
-    const massUnits = [
-      "mg/mL" /* MG_ML */,
-      "\xB5g/mL" /* UG_ML */
-    ];
-    const percentUnits = [
-      "%(w/v)" /* PERCENT_W_V */,
-      "%(w/w)" /* PERCENT_W_W */,
-      "%(v/v)" /* PERCENT_V_V */
-    ];
-    if (molarUnits.includes(fromUnit) && molarUnits.includes(toUnit))
-      return true;
-    if (massUnits.includes(fromUnit) && massUnits.includes(toUnit))
-      return true;
-    if (percentUnits.includes(fromUnit) && percentUnits.includes(toUnit))
-      return true;
-    if (molarUnits.includes(fromUnit) && massUnits.includes(toUnit))
-      return true;
-    if (massUnits.includes(fromUnit) && molarUnits.includes(toUnit))
-      return true;
-    if (molarUnits.includes(fromUnit) && fromUnit === "%(w/v)" /* PERCENT_W_V */)
-      return true;
-    if (fromUnit === "%(w/v)" /* PERCENT_W_V */ && molarUnits.includes(toUnit))
-      return true;
-    return false;
+    return molarUnits.includes(fromUnit) && molarUnits.includes(toUnit);
   }
   /**
    * Get human-readable unit names
@@ -3236,18 +3193,11 @@ var ConversionUtils = class {
       ["mL" /* MILLILITER */]: "Milliliter",
       ["\xB5L" /* MICROLITER */]: "Microliter",
       ["nL" /* NANOLITER */]: "Nanoliter",
-      // Concentration units
+      // Concentration units (M-series only)
       ["M" /* MOLAR */]: "Molar",
       ["mM" /* MILLIMOLAR */]: "Millimolar",
       ["\xB5M" /* MICROMOLAR */]: "Micromolar",
       ["nM" /* NANOMOLAR */]: "Nanomolar",
-      ["%(w/v)" /* PERCENT_W_V */]: "Percent (w/v)",
-      ["%(w/w)" /* PERCENT_W_W */]: "Percent (w/w)",
-      ["%(v/v)" /* PERCENT_V_V */]: "Percent (v/v)",
-      ["mg/mL" /* MG_ML */]: "mg/mL",
-      ["\xB5g/mL" /* UG_ML */]: "\xB5g/mL",
-      ["ppm" /* PPM */]: "Parts per million",
-      ["ppb" /* PPB */]: "Parts per billion",
       // Mass units
       ["g" /* GRAM */]: "Gram",
       ["mg" /* MILLIGRAM */]: "Milligram",
@@ -3828,6 +3778,274 @@ var CalculationEngine = class {
       errors,
       calculationSteps
     };
+  }
+  calculateSerialDilution(data) {
+    const errors = [];
+    const warnings = [];
+    const steps = [];
+    const cellAdditionInstructions = [];
+    this.validateSerialDilutionData(data, errors);
+    if (errors.length > 0) {
+      return {
+        steps: [],
+        cellAdditionInstructions: [],
+        warnings,
+        errors,
+        protocolSummary: {
+          totalSteps: 0,
+          totalVolume: 0,
+          volumeUnit: data.dilutionVolumeUnit,
+          highestDilutionFactor: 0,
+          estimatedTime: "0 min",
+          requiredTubes: 0
+        }
+      };
+    }
+    const stockConcM = this.convertConcentration(
+      data.stockConcentration,
+      data.stockUnit,
+      "M" /* MOLAR */
+    );
+    const targetConcsM = data.targetConcentrations.map(
+      (conc) => this.convertConcentration(conc, data.targetUnit, "M" /* MOLAR */)
+    );
+    const sortedTargetsM = targetConcsM.sort((a, b) => b - a);
+    const dilutionVolumeL = this.convertVolume(
+      data.dilutionVolume,
+      data.dilutionVolumeUnit,
+      "L" /* LITER */
+    );
+    const cellVolumeL = this.convertVolume(
+      data.cellVolume,
+      data.cellVolumeUnit,
+      "L" /* LITER */
+    );
+    const additionVolumeL = this.convertVolume(
+      data.additionVolume,
+      data.additionVolumeUnit,
+      "L" /* LITER */
+    );
+    const dilutionPlan = this.planSerialDilution(
+      stockConcM,
+      sortedTargetsM,
+      dilutionVolumeL,
+      cellVolumeL,
+      additionVolumeL
+    );
+    let currentConc = stockConcM;
+    let stepNumber = 1;
+    for (const planStep of dilutionPlan) {
+      const targetConc = planStep.targetConcentration;
+      const dilutionFactor = currentConc / targetConc;
+      const stockVolumeNeeded = dilutionVolumeL / dilutionFactor;
+      const solventVolumeNeeded = dilutionVolumeL - stockVolumeNeeded;
+      const step = {
+        stepNumber,
+        name: `Step ${stepNumber}`,
+        fromConcentration: this.convertConcentration(currentConc, "M" /* MOLAR */, data.stockUnit),
+        toConcentration: this.convertConcentration(targetConc, "M" /* MOLAR */, data.targetUnit),
+        concentrationUnit: data.targetUnit,
+        stockVolume: this.convertVolume(stockVolumeNeeded, "L" /* LITER */, data.dilutionVolumeUnit),
+        solventVolume: this.convertVolume(solventVolumeNeeded, "L" /* LITER */, data.dilutionVolumeUnit),
+        totalVolume: this.convertVolume(dilutionVolumeL, "L" /* LITER */, data.dilutionVolumeUnit),
+        volumeUnit: data.dilutionVolumeUnit,
+        dilutionFactor,
+        isIntermediateStep: false,
+        description: this.generateStepDescription(
+          this.convertConcentration(currentConc, "M" /* MOLAR */, data.stockUnit),
+          this.convertConcentration(targetConc, "M" /* MOLAR */, data.targetUnit),
+          this.convertVolume(stockVolumeNeeded, "L" /* LITER */, data.dilutionVolumeUnit),
+          this.convertVolume(solventVolumeNeeded, "L" /* LITER */, data.dilutionVolumeUnit),
+          data.stockUnit,
+          data.targetUnit,
+          data.dilutionVolumeUnit,
+          stepNumber === 1
+        )
+      };
+      steps.push(step);
+      stepNumber++;
+      currentConc = targetConc;
+    }
+    this.checkSerialDilutionWarnings(data, steps, warnings);
+    const protocolSummary = {
+      totalSteps: steps.length,
+      totalVolume: steps.reduce((sum, step) => sum + step.totalVolume, 0),
+      volumeUnit: data.dilutionVolumeUnit,
+      highestDilutionFactor: Math.max(...steps.map((s) => s.dilutionFactor)),
+      estimatedTime: this.estimateProtocolTime(steps.length),
+      requiredTubes: steps.length + 1
+      // +1 for stock
+    };
+    const exportData = {
+      dilutionTable: this.generateDilutionTable(steps),
+      additionTable: this.generateAdditionTable(cellAdditionInstructions),
+      csvFormat: this.generateCSVExport(steps, cellAdditionInstructions),
+      markdownFormat: this.generateMarkdownExport(steps, cellAdditionInstructions, protocolSummary)
+    };
+    return {
+      steps,
+      cellAdditionInstructions,
+      warnings,
+      errors,
+      protocolSummary,
+      exportData
+    };
+  }
+  validateSerialDilutionData(data, errors) {
+    if (!data.stockConcentration || data.stockConcentration <= 0) {
+      errors.push({
+        type: "invalid_concentration" /* INVALID_CONCENTRATION */,
+        message: "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u306E\u6FC3\u5EA6\u304C\u7121\u52B9\u3067\u3059",
+        field: "stockConcentration"
+      });
+    }
+    if (!data.cellVolume || data.cellVolume <= 0) {
+      errors.push({
+        type: "invalid_volume" /* INVALID_VOLUME */,
+        message: "\u7D30\u80DE\u6EB6\u6DB2\u306E\u91CF\u304C\u7121\u52B9\u3067\u3059",
+        field: "cellVolume"
+      });
+    }
+    if (!data.additionVolume || data.additionVolume <= 0) {
+      errors.push({
+        type: "invalid_volume" /* INVALID_VOLUME */,
+        message: "\u7D30\u80DE\u3078\u306E\u6DFB\u52A0\u91CF\u304C\u7121\u52B9\u3067\u3059",
+        field: "additionVolume"
+      });
+    }
+    if (!data.dilutionVolume || data.dilutionVolume <= 0) {
+      errors.push({
+        type: "invalid_volume" /* INVALID_VOLUME */,
+        message: "\u5E0C\u91C8\u6BB5\u968E\u3067\u306E\u4F5C\u6210\u91CF\u304C\u7121\u52B9\u3067\u3059",
+        field: "dilutionVolume"
+      });
+    }
+    if (!data.targetConcentrations || data.targetConcentrations.length === 0) {
+      errors.push({
+        type: "missing_required_field" /* MISSING_REQUIRED_FIELD */,
+        message: "\u6700\u7D42\u76EE\u6A19\u6FC3\u5EA6\u304C\u6307\u5B9A\u3055\u308C\u3066\u3044\u307E\u305B\u3093",
+        field: "targetConcentrations"
+      });
+    }
+    if (data.targetConcentrations) {
+      data.targetConcentrations.forEach((conc, index) => {
+        if (conc <= 0) {
+          errors.push({
+            type: "invalid_concentration" /* INVALID_CONCENTRATION */,
+            message: `\u76EE\u6A19\u6FC3\u5EA6 ${index + 1} \u304C\u7121\u52B9\u3067\u3059`,
+            field: `targetConcentrations[${index}]`
+          });
+        }
+      });
+    }
+  }
+  planSerialDilution(stockConcM, targetConcsM, dilutionVolumeL, cellVolumeL, additionVolumeL) {
+    const requiredConcsM = targetConcsM.map((targetM) => {
+      return targetM * (cellVolumeL + additionVolumeL) / additionVolumeL;
+    });
+    return requiredConcsM.map((conc) => ({ targetConcentration: conc }));
+  }
+  generateStepDescription(fromConc, toConc, stockVolume, solventVolume, stockUnit, targetUnit, volumeUnit, isFirstStep) {
+    const fromStr = this.formatConcentration(fromConc, stockUnit);
+    const toStr = this.formatConcentration(toConc, targetUnit);
+    const stockVolOpt = ConversionUtils.optimizeVolumeDisplay(stockVolume, volumeUnit);
+    const solventVolOpt = ConversionUtils.optimizeVolumeDisplay(solventVolume, volumeUnit);
+    const stockVolStr = `${stockVolOpt.value.toFixed(this.settings.decimalPlaces)} ${stockVolOpt.unit}`;
+    const solventVolStr = `${solventVolOpt.value.toFixed(this.settings.decimalPlaces)} ${solventVolOpt.unit}`;
+    const source = isFirstStep ? "Stock" : "\u524D\u30B9\u30C6\u30C3\u30D7";
+    return `${fromStr} ${source}\u3092${stockVolStr}\u3068\u308A\u3001\u6EB6\u5A92${solventVolStr}\u3068\u6DF7\u5408 (\u2192${toStr})`;
+  }
+  formatConcentration(concentration, unit) {
+    return `${concentration.toFixed(this.settings.decimalPlaces)} ${unit}`;
+  }
+  checkSerialDilutionWarnings(data, steps, warnings) {
+    const minVolume = 1;
+    steps.forEach((step, index) => {
+      if (step.stockVolume < minVolume && step.volumeUnit === "\xB5L" /* MICROLITER */) {
+        warnings.push({
+          type: "small_volume" /* SMALL_VOLUME */,
+          message: `Step ${step.stepNumber}: \u5FC5\u8981\u306A\u5BB9\u91CF\u304C ${step.stockVolume} ${step.volumeUnit} \u3068\u5C0F\u3055\u3059\u304E\u307E\u3059`,
+          severity: "high"
+        });
+      }
+    });
+    const maxReasonableDilution = 1e3;
+    steps.forEach((step) => {
+      if (step.dilutionFactor > maxReasonableDilution) {
+        warnings.push({
+          type: "unusual_dilution_factor" /* UNUSUAL_DILUTION_FACTOR */,
+          message: `Step ${step.stepNumber}: \u5E0C\u91C8\u500D\u7387\u304C ${step.dilutionFactor.toFixed(0)} \u500D\u3068\u9AD8\u3059\u304E\u307E\u3059`,
+          severity: "medium"
+        });
+      }
+    });
+  }
+  estimateProtocolTime(numSteps) {
+    const timePerStep = 3;
+    const totalMinutes = numSteps * timePerStep;
+    if (totalMinutes < 60) {
+      return `${totalMinutes} min`;
+    } else {
+      const hours = Math.floor(totalMinutes / 60);
+      const minutes = totalMinutes % 60;
+      return `${hours}h ${minutes}min`;
+    }
+  }
+  generateDilutionTable(steps) {
+    const headers = ["Step", "From", "To", "Stock Volume", "Solvent Volume", "Dilution Factor"];
+    const rows = steps.map((step) => [
+      step.name,
+      `${step.fromConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}`,
+      `${step.toConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}`,
+      `${step.stockVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}`,
+      `${step.solventVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}`,
+      `${step.dilutionFactor.toFixed(1)}x`
+    ]);
+    return [headers, ...rows];
+  }
+  generateAdditionTable(instructions) {
+    const headers = ["Target Concentration", "Use Step", "Addition Volume", "Final Cell Volume"];
+    const rows = instructions.map((instruction) => [
+      `${instruction.targetConcentration.toFixed(this.settings.decimalPlaces)} ${instruction.concentrationUnit}`,
+      instruction.stepName,
+      `${instruction.additionVolume.toFixed(this.settings.decimalPlaces)} ${instruction.volumeUnit}`,
+      `${instruction.finalCellVolume.toFixed(this.settings.decimalPlaces)} ${instruction.volumeUnit}`
+    ]);
+    return [headers, ...rows];
+  }
+  generateCSVExport(steps, instructions) {
+    const dilutionTable = this.generateDilutionTable(steps);
+    const additionTable = this.generateAdditionTable(instructions);
+    let csv = "# Serial Dilution Protocol\n\n";
+    csv += "## Dilution Steps\n";
+    csv += dilutionTable.map((row) => row.join(",")).join("\n") + "\n\n";
+    csv += "## Cell Addition Instructions\n";
+    csv += additionTable.map((row) => row.join(",")).join("\n");
+    return csv;
+  }
+  generateMarkdownExport(steps, instructions, summary) {
+    let md = "# Serial Dilution Protocol\n\n";
+    md += "## Protocol Summary\n";
+    md += `- Total Steps: ${summary.totalSteps}
+`;
+    md += `- Required Tubes: ${summary.requiredTubes}
+`;
+    md += `- Estimated Time: ${summary.estimatedTime}
+`;
+    md += `- Highest Dilution Factor: ${summary.highestDilutionFactor.toFixed(0)}x
+
+`;
+    md += "## Part 1: Serial Dilution Steps\n";
+    steps.forEach((step, index) => {
+      md += `${index + 1}. ${step.description}
+`;
+    });
+    md += "\n## Part 2: Cell Addition Instructions\n";
+    instructions.forEach((instruction, index) => {
+      md += `${index + 1}. For ${instruction.targetConcentration.toFixed(this.settings.decimalPlaces)} ${instruction.concentrationUnit}: Use ${instruction.stepName}, add ${instruction.additionVolume.toFixed(this.settings.decimalPlaces)} ${instruction.volumeUnit} to cells
+`;
+    });
+    return md;
   }
 };
 
@@ -4615,6 +4833,10 @@ var BufferCalcUI = class {
           console.log("Rendering dilution calculator...");
           await this.renderDilutionCalculator();
           break;
+        case "serial-dilution":
+          console.log("Rendering serial dilution calculator...");
+          await this.renderSerialDilutionCalculator();
+          break;
         default:
           this.container.createEl("div", {
             text: `Unknown calculation type: ${this.blockContent.type}`,
@@ -4633,7 +4855,7 @@ var BufferCalcUI = class {
   async renderBufferCalculator() {
     const data = this.blockContent.data;
     const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-    header.createEl("h3", { text: data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97", cls: "buffer-calc-title" });
+    this.createEditableTitle(header, data);
     const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
     const volumeContainer = controls.createEl("div", { cls: "buffer-calc-volume-input" });
     volumeContainer.createEl("label", { text: "\u7DCF\u4F53\u7A4D:" });
@@ -4814,10 +5036,7 @@ var BufferCalcUI = class {
       { value: "M" /* MOLAR */, label: "M" },
       { value: "mM" /* MILLIMOLAR */, label: "mM" },
       { value: "\xB5M" /* MICROMOLAR */, label: "\xB5M" },
-      { value: "nM" /* NANOMOLAR */, label: "nM" },
-      { value: "%(w/v)" /* PERCENT_W_V */, label: "% (w/v)" },
-      { value: "mg/mL" /* MG_ML */, label: "mg/mL" },
-      { value: "\xB5g/mL" /* UG_ML */, label: "\xB5g/mL" }
+      { value: "nM" /* NANOMOLAR */, label: "nM" }
     ];
     units.forEach((unit) => {
       const option = select.createEl("option", {
@@ -4962,7 +5181,7 @@ var BufferCalcUI = class {
       const data = this.blockContent.data;
       console.log("Stock calculator - Starting render with data:", data);
       const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-      header.createEl("h3", { text: data.name || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97", cls: "buffer-calc-title" });
+      this.createEditableStockTitle(header, data);
       const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
       const reagentContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       reagentContainer.createEl("label", { text: "\u8A66\u85AC\u540D:" });
@@ -5078,7 +5297,7 @@ var BufferCalcUI = class {
       const data = this.blockContent.data;
       console.log("Dilution calculator - Starting render with data:", data);
       const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-      header.createEl("h3", { text: data.name || "\u5E0C\u91C8\u8A08\u7B97", cls: "buffer-calc-title" });
+      this.createEditableDilutionTitle(header, data);
       const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
       const stockConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       stockConcContainer.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:" });
@@ -5403,6 +5622,488 @@ var BufferCalcUI = class {
       this.mobileOptimization.optimizeButton(button);
     });
   }
+  /**
+   * 編集可能なタイトルを作成
+   */
+  createEditableTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("h3", {
+      text: data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97",
+      cls: "buffer-calc-title editable-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270E",
+      cls: "buffer-calc-edit-title-btn",
+      attr: { "aria-label": "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "",
+      cls: "buffer-calc-title-input",
+      attr: { "placeholder": "\u30D0\u30C3\u30D5\u30A1\u30FC\u540D\u3092\u5165\u529B..." }
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.value = data.name || "";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
+    });
+  }
+  /**
+   * ストック計算用の編集可能なタイトルを作成
+   */
+  createEditableStockTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("h3", {
+      text: data.name || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97",
+      cls: "buffer-calc-title editable-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270E",
+      cls: "buffer-calc-edit-title-btn",
+      attr: { "aria-label": "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "",
+      cls: "buffer-calc-title-input",
+      attr: { "placeholder": "\u30B9\u30C8\u30C3\u30AF\u540D\u3092\u5165\u529B..." }
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.value = data.name || "";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
+    });
+  }
+  /**
+   * 希釈計算用の編集可能なタイトルを作成
+   */
+  createEditableDilutionTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("h3", {
+      text: data.name || "\u5E0C\u91C8\u8A08\u7B97",
+      cls: "buffer-calc-title editable-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270E",
+      cls: "buffer-calc-edit-title-btn",
+      attr: { "aria-label": "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "",
+      cls: "buffer-calc-title-input",
+      attr: { "placeholder": "\u5E0C\u91C8\u540D\u3092\u5165\u529B..." }
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.value = data.name || "";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "\u5E0C\u91C8\u8A08\u7B97";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
+    });
+  }
+  async renderSerialDilutionCalculator() {
+    var _a, _b, _c, _d;
+    const data = this.blockContent.data;
+    const header = this.container.createEl("div", { cls: "buffer-calc-header" });
+    this.createSerialDilutionEditableTitle(header, data);
+    const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
+    const stockSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
+    stockSection.createEl("h3", { text: "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2", cls: "buffer-calc-section-title" });
+    const stockRow = stockSection.createEl("div", { cls: "buffer-calc-input-row" });
+    stockRow.createEl("label", { text: "\u6FC3\u5EA6:", cls: "buffer-calc-label" });
+    const stockConcInput = stockRow.createEl("input", {
+      type: "number",
+      value: ((_a = data.stockConcentration) == null ? void 0 : _a.toString()) || "",
+      cls: "buffer-calc-input"
+    });
+    const stockUnitSelect = stockRow.createEl("select", { cls: "buffer-calc-select" });
+    this.populateConcentrationUnits(stockUnitSelect, data.stockUnit);
+    const cellSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
+    cellSection.createEl("h3", { text: "\u7D30\u80DE\u57F9\u990A\u30D1\u30E9\u30E1\u30FC\u30BF", cls: "buffer-calc-section-title" });
+    const cellVolumeRow = cellSection.createEl("div", { cls: "buffer-calc-input-row" });
+    cellVolumeRow.createEl("label", { text: "\u7D30\u80DE\u6EB6\u6DB2\u306E\u91CF:", cls: "buffer-calc-label" });
+    const cellVolumeInput = cellVolumeRow.createEl("input", {
+      type: "number",
+      value: ((_b = data.cellVolume) == null ? void 0 : _b.toString()) || "",
+      cls: "buffer-calc-input"
+    });
+    const cellVolumeUnitSelect = cellVolumeRow.createEl("select", { cls: "buffer-calc-select" });
+    this.populateVolumeUnits(cellVolumeUnitSelect, data.cellVolumeUnit);
+    const additionVolumeRow = cellSection.createEl("div", { cls: "buffer-calc-input-row" });
+    additionVolumeRow.createEl("label", { text: "\u7D30\u80DE\u3078\u306E\u6DFB\u52A0\u91CF:", cls: "buffer-calc-label" });
+    const additionVolumeInput = additionVolumeRow.createEl("input", {
+      type: "number",
+      value: ((_c = data.additionVolume) == null ? void 0 : _c.toString()) || "",
+      cls: "buffer-calc-input"
+    });
+    const additionVolumeUnitSelect = additionVolumeRow.createEl("select", { cls: "buffer-calc-select" });
+    this.populateVolumeUnits(additionVolumeUnitSelect, data.additionVolumeUnit);
+    const dilutionSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
+    dilutionSection.createEl("h3", { text: "\u5E0C\u91C8\u30D1\u30E9\u30E1\u30FC\u30BF", cls: "buffer-calc-section-title" });
+    const dilutionVolumeRow = dilutionSection.createEl("div", { cls: "buffer-calc-input-row" });
+    dilutionVolumeRow.createEl("label", { text: "\u5404\u5E0C\u91C8\u6BB5\u968E\u3067\u306E\u4F5C\u6210\u91CF:", cls: "buffer-calc-label" });
+    const dilutionVolumeInput = dilutionVolumeRow.createEl("input", {
+      type: "number",
+      value: ((_d = data.dilutionVolume) == null ? void 0 : _d.toString()) || "",
+      cls: "buffer-calc-input"
+    });
+    const dilutionVolumeUnitSelect = dilutionVolumeRow.createEl("select", { cls: "buffer-calc-select" });
+    this.populateVolumeUnits(dilutionVolumeUnitSelect, data.dilutionVolumeUnit);
+    const targetSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
+    const targetHeader = targetSection.createEl("div", { cls: "buffer-calc-section-header" });
+    targetHeader.createEl("h3", { text: "\u6700\u7D42\u76EE\u6A19\u6FC3\u5EA6", cls: "buffer-calc-section-title" });
+    const targetConcentrationsContainer = targetSection.createEl("div", { cls: "serial-dilution-targets-container" });
+    const targetUnitRow = targetSection.createEl("div", { cls: "buffer-calc-input-row" });
+    targetUnitRow.createEl("label", { text: "\u6FC3\u5EA6\u5358\u4F4D:", cls: "buffer-calc-label" });
+    const targetUnitSelect = targetUnitRow.createEl("select", { cls: "buffer-calc-select" });
+    this.populateConcentrationUnits(targetUnitSelect, data.targetUnit);
+    const addConcentrationBtn = targetSection.createEl("button", {
+      text: "+ \u6700\u5F8C\u306B\u8FFD\u52A0",
+      cls: "buffer-calc-button buffer-calc-button-secondary"
+    });
+    this.renderTargetConcentrations(targetConcentrationsContainer, data);
+    const displaySection = controls.createEl("div", { cls: "buffer-calc-input-group" });
+    displaySection.createEl("h3", { text: "\u8868\u793A\u5F62\u5F0F", cls: "buffer-calc-section-title" });
+    const displayFormatRow = displaySection.createEl("div", { cls: "buffer-calc-input-row" });
+    displayFormatRow.createEl("label", { text: "\u624B\u9806\u8868\u793A:", cls: "buffer-calc-label" });
+    const displayFormatSelect = displayFormatRow.createEl("select", { cls: "buffer-calc-select" });
+    displayFormatSelect.createEl("option", { value: "text" /* TEXT */, text: "\u6587\u5B57\u5F62\u5F0F" });
+    displayFormatSelect.createEl("option", { value: "table" /* TABLE */, text: "\u8868\u5F62\u5F0F" });
+    displayFormatSelect.value = data.stepDisplayFormat || "text" /* TEXT */;
+    const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+    const recalculate = () => {
+      try {
+        data.stockConcentration = parseFloat(stockConcInput.value) || 0;
+        data.stockUnit = stockUnitSelect.value;
+        data.cellVolume = parseFloat(cellVolumeInput.value) || 0;
+        data.cellVolumeUnit = cellVolumeUnitSelect.value;
+        data.additionVolume = parseFloat(additionVolumeInput.value) || 0;
+        data.additionVolumeUnit = additionVolumeUnitSelect.value;
+        data.dilutionVolume = parseFloat(dilutionVolumeInput.value) || 0;
+        data.dilutionVolumeUnit = dilutionVolumeUnitSelect.value;
+        data.targetUnit = targetUnitSelect.value;
+        data.stepDisplayFormat = displayFormatSelect.value;
+        const result = this.calculationEngine.calculateSerialDilution(data);
+        this.renderSerialDilutionResults(resultsContainer, result, data);
+      } catch (error) {
+        console.error("Serial dilution calculation error:", error);
+        resultsContainer.innerHTML = `<div class="buffer-calc-error">\u8A08\u7B97\u30A8\u30E9\u30FC: ${error.message}</div>`;
+      }
+    };
+    [
+      stockConcInput,
+      stockUnitSelect,
+      cellVolumeInput,
+      cellVolumeUnitSelect,
+      additionVolumeInput,
+      additionVolumeUnitSelect,
+      dilutionVolumeInput,
+      dilutionVolumeUnitSelect,
+      targetUnitSelect,
+      displayFormatSelect
+    ].forEach((element) => {
+      element.addEventListener("input", recalculate);
+      element.addEventListener("change", recalculate);
+    });
+    addConcentrationBtn.addEventListener("click", () => {
+      data.targetConcentrations = data.targetConcentrations || [];
+      data.targetConcentrations.push(1);
+      this.renderTargetConcentrations(targetConcentrationsContainer, data);
+      recalculate();
+    });
+    recalculate();
+  }
+  renderTargetConcentrations(container, data) {
+    container.empty();
+    if (!data.targetConcentrations || data.targetConcentrations.length === 0) {
+      data.targetConcentrations = [100, 10, 1, 0.1];
+    }
+    data.targetConcentrations.forEach((concentration, index) => {
+      const concentrationRow = container.createEl("div", { cls: "buffer-calc-input-row serial-dilution-target-row" });
+      const concentrationInput = concentrationRow.createEl("input", {
+        type: "number",
+        value: concentration.toString(),
+        cls: "buffer-calc-input"
+      });
+      const buttonContainer = concentrationRow.createEl("div", { cls: "serial-dilution-target-buttons" });
+      const insertAboveBtn = buttonContainer.createEl("button", {
+        text: "\u2191",
+        cls: "buffer-calc-button buffer-calc-button-small serial-dilution-insert-btn",
+        attr: { title: "\u4E0A\u306B\u8FFD\u52A0" }
+      });
+      const insertBelowBtn = buttonContainer.createEl("button", {
+        text: "\u2193",
+        cls: "buffer-calc-button buffer-calc-button-small serial-dilution-insert-btn",
+        attr: { title: "\u4E0B\u306B\u8FFD\u52A0" }
+      });
+      const removeBtn = buttonContainer.createEl("button", {
+        text: "\xD7",
+        cls: "buffer-calc-button buffer-calc-button-danger buffer-calc-button-small serial-dilution-remove-btn",
+        attr: { title: "\u524A\u9664" }
+      });
+      concentrationInput.addEventListener("input", () => {
+        data.targetConcentrations[index] = parseFloat(concentrationInput.value) || 0;
+        concentrationInput.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      insertAboveBtn.addEventListener("click", () => {
+        this.insertConcentrationAt(data, index, "before");
+        this.renderTargetConcentrations(container, data);
+        insertAboveBtn.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      insertBelowBtn.addEventListener("click", () => {
+        this.insertConcentrationAt(data, index, "after");
+        this.renderTargetConcentrations(container, data);
+        insertBelowBtn.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      removeBtn.addEventListener("click", () => {
+        data.targetConcentrations.splice(index, 1);
+        this.renderTargetConcentrations(container, data);
+        container.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+      if (data.targetConcentrations.length === 1) {
+        removeBtn.style.visibility = "hidden";
+      }
+    });
+  }
+  insertConcentrationAt(data, index, position) {
+    const newConcentration = 1;
+    const insertIndex = position === "before" ? index : index + 1;
+    data.targetConcentrations.splice(insertIndex, 0, newConcentration);
+  }
+  renderSerialDilutionResults(container, result, data) {
+    container.empty();
+    if (result.errors.length > 0) {
+      const errorContainer = container.createEl("div", { cls: "buffer-calc-errors" });
+      errorContainer.createEl("h3", { text: "\u30A8\u30E9\u30FC" });
+      result.errors.forEach((error) => {
+        errorContainer.createEl("div", {
+          text: error.message,
+          cls: "buffer-calc-error-item"
+        });
+      });
+      return;
+    }
+    const summaryContainer = container.createEl("div", { cls: "serial-dilution-summary" });
+    summaryContainer.createEl("h3", { text: "\u30D7\u30ED\u30C8\u30B3\u30EB\u6982\u8981" });
+    const summaryList = summaryContainer.createEl("ul");
+    summaryList.createEl("li", { text: `\u7DCF\u30B9\u30C6\u30C3\u30D7\u6570: ${result.protocolSummary.totalSteps}` });
+    summaryList.createEl("li", { text: `\u5FC5\u8981\u30C1\u30E5\u30FC\u30D6\u6570: ${result.protocolSummary.requiredTubes}` });
+    summaryList.createEl("li", { text: `\u63A8\u5B9A\u6642\u9593: ${result.protocolSummary.estimatedTime}` });
+    summaryList.createEl("li", { text: `\u6700\u5927\u5E0C\u91C8\u500D\u7387: ${result.protocolSummary.highestDilutionFactor.toFixed(0)}\u500D` });
+    const stepsContainer = container.createEl("div", { cls: "serial-dilution-steps" });
+    stepsContainer.createEl("h3", { text: "\u6BB5\u968E\u5E0C\u91C8\u306E\u624B\u9806" });
+    const displayFormat = data.stepDisplayFormat || "text" /* TEXT */;
+    if (displayFormat === "table" /* TABLE */) {
+      const stepsTable = stepsContainer.createEl("table", { cls: "serial-dilution-table" });
+      const headerRow = stepsTable.createEl("tr");
+      headerRow.createEl("th", { text: "\u30B9\u30C6\u30C3\u30D7" });
+      headerRow.createEl("th", { text: "\u5143\u6FC3\u5EA6" });
+      headerRow.createEl("th", { text: "\u76EE\u6A19\u6FC3\u5EA6" });
+      headerRow.createEl("th", { text: "Stock\u91CF" });
+      headerRow.createEl("th", { text: "\u6EB6\u5A92\u91CF" });
+      headerRow.createEl("th", { text: "\u5E0C\u91C8\u500D\u7387" });
+      result.steps.forEach((step) => {
+        const row = stepsTable.createEl("tr");
+        row.createEl("td", { text: step.name });
+        row.createEl("td", { text: `${step.fromConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}` });
+        row.createEl("td", { text: `${step.toConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}` });
+        row.createEl("td", { text: `${step.stockVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}` });
+        row.createEl("td", { text: `${step.solventVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}` });
+        row.createEl("td", { text: `${step.dilutionFactor.toFixed(1)}\u500D` });
+      });
+    } else {
+      const stepsList = stepsContainer.createEl("ol");
+      result.steps.forEach((step) => {
+        stepsList.createEl("li", { text: step.description });
+      });
+    }
+    if (result.warnings.length > 0) {
+      const warningsContainer = container.createEl("div", { cls: "buffer-calc-warnings" });
+      warningsContainer.createEl("h3", { text: "\u8B66\u544A" });
+      result.warnings.forEach((warning) => {
+        const warningEl = warningsContainer.createEl("div", {
+          text: warning.message,
+          cls: `buffer-calc-warning-item buffer-calc-warning-${warning.severity}`
+        });
+      });
+    }
+    if (result.exportData) {
+      const exportContainer = container.createEl("div", { cls: "serial-dilution-export" });
+      exportContainer.createEl("h3", { text: "\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8" });
+      const exportButtons = exportContainer.createEl("div", { cls: "buffer-calc-export-buttons" });
+      const csvBtn = exportButtons.createEl("button", {
+        text: "CSV\u5F62\u5F0F\u3067\u30B3\u30D4\u30FC",
+        cls: "buffer-calc-button buffer-calc-button-secondary"
+      });
+      const markdownBtn = exportButtons.createEl("button", {
+        text: "Markdown\u5F62\u5F0F\u3067\u30B3\u30D4\u30FC",
+        cls: "buffer-calc-button buffer-calc-button-secondary"
+      });
+      csvBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(result.exportData.csvFormat);
+        new import_obsidian8.Notice("CSV\u5F62\u5F0F\u3067\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u306B\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F");
+      });
+      markdownBtn.addEventListener("click", () => {
+        navigator.clipboard.writeText(result.exportData.markdownFormat);
+        new import_obsidian8.Notice("Markdown\u5F62\u5F0F\u3067\u30AF\u30EA\u30C3\u30D7\u30DC\u30FC\u30C9\u306B\u30B3\u30D4\u30FC\u3057\u307E\u3057\u305F");
+      });
+    }
+  }
+  createSerialDilutionEditableTitle(container, data) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    const titleDisplay = titleContainer.createEl("span", {
+      text: data.name || "Serial Dilution Protocol",
+      cls: "buffer-calc-title"
+    });
+    const editButton = titleContainer.createEl("button", {
+      text: "\u270F\uFE0F",
+      cls: "buffer-calc-edit-button",
+      attr: { title: "\u30BF\u30A4\u30C8\u30EB\u3092\u7DE8\u96C6" }
+    });
+    const titleInput = titleContainer.createEl("input", {
+      type: "text",
+      value: data.name || "Serial Dilution Protocol",
+      cls: "buffer-calc-title-input"
+    });
+    titleInput.style.display = "none";
+    let isEditing = false;
+    const enterEditMode = () => {
+      if (isEditing)
+        return;
+      isEditing = true;
+      titleDisplay.style.display = "none";
+      editButton.style.display = "none";
+      titleInput.style.display = "inline-block";
+      titleInput.focus();
+      titleInput.select();
+    };
+    const exitEditMode = (save = false) => {
+      if (!isEditing)
+        return;
+      isEditing = false;
+      if (save) {
+        const newName = titleInput.value.trim();
+        data.name = newName || void 0;
+        titleDisplay.textContent = newName || "Serial Dilution Protocol";
+      }
+      titleDisplay.style.display = "inline-block";
+      editButton.style.display = "inline-block";
+      titleInput.style.display = "none";
+    };
+    editButton.addEventListener("click", enterEditMode);
+    titleDisplay.addEventListener("click", enterEditMode);
+    titleInput.addEventListener("blur", () => exitEditMode(true));
+    titleInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        exitEditMode(true);
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        exitEditMode(false);
+      }
+    });
+  }
+  formatConcentrationDisplay(concentration, unit) {
+    return `${concentration.toFixed(this.settings.decimalPlaces)} ${unit}`;
+  }
 };
 
 // src/ui/template-selector.ts
@@ -5675,9 +6376,9 @@ var TemplateDatabase = class {
         template: {
           name: "BSA\u6A19\u6E96\u5E0C\u91C8",
           stockConcentration: 2,
-          stockConcentrationUnit: "mg/mL" /* MG_ML */,
+          stockConcentrationUnit: "mM" /* MILLIMOLAR */,
           finalConcentration: 100,
-          finalConcentrationUnit: "\xB5g/mL" /* UG_ML */,
+          finalConcentrationUnit: "\xB5M" /* MICROMOLAR */,
           finalVolume: 1,
           volumeUnit: "mL" /* MILLILITER */,
           notes: "\u30BF\u30F3\u30D1\u30AF\u8CEA\u5B9A\u91CF\u7528\u6A19\u6E96\u6EB6\u6DB2"
@@ -5731,6 +6432,88 @@ var TemplateDatabase = class {
         estimatedTime: "15\u5206",
         author: "Buffer Calc Team",
         references: ["Molecular Cloning Manual"],
+        createdAt: new Date(),
+        isBuiltIn: true
+      },
+      // Serial Dilution Templates
+      {
+        id: "serial-dilution-ligand-standard",
+        name: "\u30EA\u30AC\u30F3\u30C9\u6BB5\u968E\u5E0C\u91C8\uFF08\u6A19\u6E96\uFF09",
+        description: "\u7D30\u80DE\u57F9\u990A\u5B9F\u9A13\u3067\u4E00\u822C\u7684\u306A\u30EA\u30AC\u30F3\u30C9\u6FC3\u5EA6\u7BC4\u56F2\u306E\u6BB5\u968E\u5E0C\u91C8\u30D7\u30ED\u30C8\u30B3\u30EB",
+        category: "cell_culture" /* CELL_CULTURE */,
+        type: "serial-dilution",
+        template: {
+          name: "\u30EA\u30AC\u30F3\u30C9\u6BB5\u968E\u5E0C\u91C8",
+          stockConcentration: 10,
+          stockUnit: "mM" /* MILLIMOLAR */,
+          cellVolume: 200,
+          cellVolumeUnit: "\xB5L" /* MICROLITER */,
+          additionVolume: 2,
+          additionVolumeUnit: "\xB5L" /* MICROLITER */,
+          dilutionVolume: 200,
+          dilutionVolumeUnit: "\xB5L" /* MICROLITER */,
+          targetConcentrations: [100, 10, 1, 0.1],
+          targetUnit: "\xB5M" /* MICROMOLAR */
+        },
+        tags: ["\u30EA\u30AC\u30F3\u30C9", "\u7D30\u80DE\u57F9\u990A", "\u6BB5\u968E\u5E0C\u91C8", "\xB5M"],
+        difficulty: "beginner",
+        estimatedTime: "15\u5206",
+        author: "Buffer Calc Team",
+        references: ["Cell Culture Protocols"],
+        createdAt: new Date(),
+        isBuiltIn: true
+      },
+      {
+        id: "serial-dilution-drug-screening",
+        name: "\u85AC\u7269\u30B9\u30AF\u30EA\u30FC\u30CB\u30F3\u30B0\u6BB5\u968E\u5E0C\u91C8",
+        description: "\u85AC\u7269\u30B9\u30AF\u30EA\u30FC\u30CB\u30F3\u30B0\u5B9F\u9A13\u5411\u3051\u306E\u5E83\u7BC4\u56F2\u6FC3\u5EA6\u6BB5\u968E\u5E0C\u91C8\u30D7\u30ED\u30C8\u30B3\u30EB",
+        category: "cell_culture" /* CELL_CULTURE */,
+        type: "serial-dilution",
+        template: {
+          name: "\u85AC\u7269\u30B9\u30AF\u30EA\u30FC\u30CB\u30F3\u30B0\u5E0C\u91C8",
+          stockConcentration: 100,
+          stockUnit: "mM" /* MILLIMOLAR */,
+          cellVolume: 100,
+          cellVolumeUnit: "\xB5L" /* MICROLITER */,
+          additionVolume: 1,
+          additionVolumeUnit: "\xB5L" /* MICROLITER */,
+          dilutionVolume: 100,
+          dilutionVolumeUnit: "\xB5L" /* MICROLITER */,
+          targetConcentrations: [1e3, 100, 10, 1, 0.1, 0.01],
+          targetUnit: "\xB5M" /* MICROMOLAR */
+        },
+        tags: ["\u85AC\u7269", "\u30B9\u30AF\u30EA\u30FC\u30CB\u30F3\u30B0", "\u6BB5\u968E\u5E0C\u91C8", "\u5E83\u7BC4\u56F2"],
+        difficulty: "intermediate",
+        estimatedTime: "20\u5206",
+        author: "Buffer Calc Team",
+        references: ["Drug Discovery Protocols"],
+        createdAt: new Date(),
+        isBuiltIn: true
+      },
+      {
+        id: "serial-dilution-protein-titration",
+        name: "\u30BF\u30F3\u30D1\u30AF\u8CEA\u6FC3\u5EA6\u6EF4\u5B9A",
+        description: "\u30BF\u30F3\u30D1\u30AF\u8CEA\u30A2\u30C3\u30BB\u30A4\u7528\u306E\u6FC3\u5EA6\u6EF4\u5B9A\u6BB5\u968E\u5E0C\u91C8\u30D7\u30ED\u30C8\u30B3\u30EB",
+        category: "protein_buffers" /* PROTEIN_BUFFERS */,
+        type: "serial-dilution",
+        template: {
+          name: "\u30BF\u30F3\u30D1\u30AF\u8CEA\u6FC3\u5EA6\u6EF4\u5B9A",
+          stockConcentration: 10,
+          stockUnit: "mM" /* MILLIMOLAR */,
+          cellVolume: 96,
+          cellVolumeUnit: "\xB5L" /* MICROLITER */,
+          additionVolume: 4,
+          additionVolumeUnit: "\xB5L" /* MICROLITER */,
+          dilutionVolume: 200,
+          dilutionVolumeUnit: "\xB5L" /* MICROLITER */,
+          targetConcentrations: [1, 0.5, 0.25, 0.125, 0.0625],
+          targetUnit: "mM" /* MILLIMOLAR */
+        },
+        tags: ["\u30BF\u30F3\u30D1\u30AF\u8CEA", "\u30A2\u30C3\u30BB\u30A4", "\u6EF4\u5B9A", "\xB5g/mL"],
+        difficulty: "intermediate",
+        estimatedTime: "12\u5206",
+        author: "Buffer Calc Team",
+        references: ["Protein Assay Protocols"],
         createdAt: new Date(),
         isBuiltIn: true
       }
@@ -6117,6 +6900,11 @@ var BufferCalcPlugin = class extends import_obsidian10.Plugin {
       this.bufferCalcBlockHandler.bind(this, "dilution"),
       100
     );
+    this.registerMarkdownCodeBlockProcessor(
+      "serial-dilution",
+      this.bufferCalcBlockHandler.bind(this, "serial-dilution"),
+      100
+    );
     this.settingsTab = new BufferCalcSettingTab(this.app, this);
     this.addSettingTab(this.settingsTab);
     this.addCommand({
@@ -6280,7 +7068,15 @@ var BufferCalcPlugin = class extends import_obsidian10.Plugin {
         } else if (!inComponentsSection || !line.startsWith("    ")) {
           if (cleanKey !== "components") {
             inComponentsSection = false;
-            result[cleanKey] = isNaN(Number(value)) ? value : Number(value);
+            if (value.startsWith("[") && value.endsWith("]")) {
+              const arrayContent = value.slice(1, -1).trim();
+              result[cleanKey] = arrayContent.split(",").map((item) => {
+                const trimmed = item.trim();
+                return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+              });
+            } else {
+              result[cleanKey] = isNaN(Number(value)) ? value : Number(value);
+            }
           }
         }
       }
@@ -6310,24 +7106,46 @@ var BufferCalcPlugin = class extends import_obsidian10.Plugin {
     return result;
   }
   getDefaultBlockContent(blockType) {
-    const defaultData = blockType === "buffer" ? {
-      totalVolume: 1e3,
-      volumeUnit: this.settings.defaultVolumeUnit,
-      components: []
-    } : blockType === "stock" ? {
-      reagentName: "",
-      targetConcentration: 100,
-      concentrationUnit: this.settings.defaultConcentrationUnit,
-      volume: 10,
-      volumeUnit: this.settings.defaultVolumeUnit
-    } : {
-      stockConcentration: 1e3,
-      stockConcentrationUnit: this.settings.defaultConcentrationUnit,
-      finalConcentration: 100,
-      finalConcentrationUnit: this.settings.defaultConcentrationUnit,
-      finalVolume: 100,
-      volumeUnit: this.settings.defaultVolumeUnit
-    };
+    let defaultData;
+    if (blockType === "buffer") {
+      defaultData = {
+        totalVolume: 1e3,
+        volumeUnit: this.settings.defaultVolumeUnit,
+        components: []
+      };
+    } else if (blockType === "stock") {
+      defaultData = {
+        reagentName: "",
+        targetConcentration: 100,
+        concentrationUnit: this.settings.defaultConcentrationUnit,
+        volume: 10,
+        volumeUnit: this.settings.defaultVolumeUnit
+      };
+    } else if (blockType === "serial-dilution") {
+      defaultData = {
+        name: "Serial Dilution Protocol",
+        stockConcentration: 10,
+        stockUnit: this.settings.defaultConcentrationUnit,
+        cellVolume: 200,
+        cellVolumeUnit: this.settings.defaultVolumeUnit,
+        additionVolume: 2,
+        additionVolumeUnit: this.settings.defaultVolumeUnit,
+        dilutionVolume: 200,
+        dilutionVolumeUnit: this.settings.defaultVolumeUnit,
+        targetConcentrations: [100, 10, 1, 0.1],
+        targetUnit: this.settings.defaultConcentrationUnit,
+        stepDisplayFormat: "text" /* TEXT */
+      };
+    } else {
+      defaultData = {
+        stockConcentration: 1e3,
+        stockConcentrationUnit: this.settings.defaultConcentrationUnit,
+        finalConcentration: 100,
+        finalConcentrationUnit: this.settings.defaultConcentrationUnit,
+        finalVolume: 100,
+        volumeUnit: this.settings.defaultVolumeUnit
+      };
+    }
     return {
       type: blockType,
       data: defaultData

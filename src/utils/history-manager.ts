@@ -160,6 +160,7 @@ export class HistoryManager {
 		const bufferCalculations = history.filter(e => e.type === 'buffer').length;
 		const stockCalculations = history.filter(e => e.type === 'stock').length;
 		const dilutionCalculations = history.filter(e => e.type === 'dilution').length;
+		const serialDilutionCalculations = history.filter(e => e.type === 'serial-dilution').length;
 
 		// 過去30日の平均
 		const recentHistory = history.filter(entry => new Date(entry.timestamp) >= thirtyDaysAgo);
@@ -210,6 +211,7 @@ export class HistoryManager {
 			bufferCalculations,
 			stockCalculations,
 			dilutionCalculations,
+			serialDilutionCalculations,
 			averageCalculationsPerDay: Math.round(averageCalculationsPerDay * 10) / 10,
 			mostUsedReagents,
 			recentActivity

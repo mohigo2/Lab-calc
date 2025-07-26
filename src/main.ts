@@ -13,9 +13,11 @@ import {
 	BufferCalcSettings,
 	BufferCalcBlockContent,
 	BufferCalcData,
+	SerialDilutionData,
 	CalculationResult,
 	DEFAULT_SETTINGS,
-	Reagent
+	Reagent,
+	StepDisplayFormat
 } from './types';
 
 import { BufferCalcSettingTab } from './settings';
@@ -76,6 +78,11 @@ export default class BufferCalcPlugin extends Plugin {
 		this.registerMarkdownCodeBlockProcessor(
 			'dilution', 
 			this.bufferCalcBlockHandler.bind(this, 'dilution'),
+			100
+		);
+		this.registerMarkdownCodeBlockProcessor(
+			'serial-dilution', 
+			this.bufferCalcBlockHandler.bind(this, 'serial-dilution'),
 			100
 		);
 
@@ -229,7 +236,7 @@ export default class BufferCalcPlugin extends Plugin {
 			}
 
 			const result = {
-				type: blockType as 'buffer' | 'stock' | 'dilution',
+				type: blockType as 'buffer' | 'stock' | 'dilution' | 'serial-dilution',
 				data: parsedData,
 				options: parsedData.options || {}
 			};
@@ -291,7 +298,16 @@ export default class BufferCalcPlugin extends Plugin {
 					// Top-level property or end of components section
 					if (cleanKey !== 'components') {
 						inComponentsSection = false;
-						result[cleanKey] = isNaN(Number(value)) ? value : Number(value);
+						// Handle arrays (e.g., targetConcentrations: [100, 10, 1, 0.1])
+						if (value.startsWith('[') && value.endsWith(']')) {
+							const arrayContent = value.slice(1, -1).trim();
+							result[cleanKey] = arrayContent.split(',').map(item => {
+								const trimmed = item.trim();
+								return isNaN(Number(trimmed)) ? trimmed : Number(trimmed);
+							});
+						} else {
+							result[cleanKey] = isNaN(Number(value)) ? value : Number(value);
+						}
 					}
 				}
 			}
@@ -330,27 +346,50 @@ export default class BufferCalcPlugin extends Plugin {
 	}
 
 	private getDefaultBlockContent(blockType: string): BufferCalcBlockContent {
-		const defaultData: BufferCalcData = blockType === 'buffer' ? {
-			totalVolume: 1000,
-			volumeUnit: this.settings.defaultVolumeUnit,
-			components: []
-		} : blockType === 'stock' ? {
-			reagentName: '',
-			targetConcentration: 100,
-			concentrationUnit: this.settings.defaultConcentrationUnit,
-			volume: 10,
-			volumeUnit: this.settings.defaultVolumeUnit
-		} : {
-			stockConcentration: 1000,
-			stockConcentrationUnit: this.settings.defaultConcentrationUnit,
-			finalConcentration: 100,
-			finalConcentrationUnit: this.settings.defaultConcentrationUnit,
-			finalVolume: 100,
-			volumeUnit: this.settings.defaultVolumeUnit
-		};
+		let defaultData: BufferCalcData;
+		
+		if (blockType === 'buffer') {
+			defaultData = {
+				totalVolume: 1000,
+				volumeUnit: this.settings.defaultVolumeUnit,
+				components: []
+			};
+		} else if (blockType === 'stock') {
+			defaultData = {
+				reagentName: '',
+				targetConcentration: 100,
+				concentrationUnit: this.settings.defaultConcentrationUnit,
+				volume: 10,
+				volumeUnit: this.settings.defaultVolumeUnit
+			};
+		} else if (blockType === 'serial-dilution') {
+			defaultData = {
+				name: 'Serial Dilution Protocol',
+				stockConcentration: 10,
+				stockUnit: this.settings.defaultConcentrationUnit,
+				cellVolume: 200,
+				cellVolumeUnit: this.settings.defaultVolumeUnit,
+				additionVolume: 2,
+				additionVolumeUnit: this.settings.defaultVolumeUnit,
+				dilutionVolume: 200,
+				dilutionVolumeUnit: this.settings.defaultVolumeUnit,
+				targetConcentrations: [100, 10, 1, 0.1],
+				targetUnit: this.settings.defaultConcentrationUnit,
+				stepDisplayFormat: StepDisplayFormat.TEXT
+			};
+		} else {
+			defaultData = {
+				stockConcentration: 1000,
+				stockConcentrationUnit: this.settings.defaultConcentrationUnit,
+				finalConcentration: 100,
+				finalConcentrationUnit: this.settings.defaultConcentrationUnit,
+				finalVolume: 100,
+				volumeUnit: this.settings.defaultVolumeUnit
+			};
+		}
 
 		return {
-			type: blockType as 'buffer' | 'stock' | 'dilution',
+			type: blockType as 'buffer' | 'stock' | 'dilution' | 'serial-dilution',
 			data: defaultData
 		};
 	}

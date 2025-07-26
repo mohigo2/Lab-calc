@@ -8,7 +8,2182 @@
   "defaultTemplate": "buffer",
   "recipeTemplates": [],
   "enableTemplates": true,
-  "calculationHistory": [],
+  "calculationHistory": [
+    {
+      "id": "hist_1753504144752_zmiqyu1zg",
+      "timestamp": "2025-07-26T04:29:04.752Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T04:29:04.751Z",
+          "updatedAt": "2025-07-26T04:29:04.751Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501776150_0isr2uy6z",
+      "timestamp": "2025-07-26T03:49:36.150Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T03:49:36.149Z",
+          "updatedAt": "2025-07-26T03:49:36.149Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501721714_1uvtfdd31",
+      "timestamp": "2025-07-26T03:48:41.714Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T03:48:41.714Z",
+          "updatedAt": "2025-07-26T03:48:41.714Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501526430_gd4qax8jv",
+      "timestamp": "2025-07-26T03:45:26.430Z",
+      "type": "dilution",
+      "name": "簡易希釈",
+      "inputData": {
+        "components": [],
+        "name": "簡易希釈",
+        "stockConcentration": 100,
+        "stockConcentrationUnit": "mM",
+        "finalConcentration": 10,
+        "finalConcentrationUnit": "mM",
+        "finalVolume": 10,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易希釈",
+          "totalVolume": 10,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "簡易希釈",
+                "molecularWeight": 0
+              },
+              "stockConcentration": 100,
+              "stockConcentrationUnit": "mM",
+              "finalConcentration": 10,
+              "finalConcentrationUnit": "mM",
+              "volumeNeeded": 0.001,
+              "volumeUnit": "mL",
+              "optimizedVolumeDisplay": "1.00 mL",
+              "percentOfTotal": 10
+            }
+          ],
+          "createdAt": "2025-07-26T03:45:26.430Z",
+          "updatedAt": "2025-07-26T03:45:26.430Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "簡易希釈",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 100,
+            "stockConcentrationUnit": "mM",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.00 mL",
+            "percentOfTotal": 10
+          }
+        ],
+        "solventVolume": 9.000000000000002,
+        "warnings": [],
+        "errors": [],
+        "calculationSteps": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501526428_bcptobf65",
+      "timestamp": "2025-07-26T03:45:26.428Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T03:45:26.427Z",
+          "updatedAt": "2025-07-26T03:45:26.427Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501526301_yhlolck4x",
+      "timestamp": "2025-07-26T03:45:26.301Z",
+      "type": "dilution",
+      "name": "Unit Conversion Dilution",
+      "inputData": {
+        "components": [],
+        "name": "Unit Conversion Dilution",
+        "stockConcentration": 1,
+        "stockConcentrationUnit": "M",
+        "finalConcentration": 100,
+        "finalConcentrationUnit": "µM",
+        "finalVolume": 50,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "Unit Conversion Dilution",
+          "totalVolume": 50,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "Unit Conversion Dilution",
+                "molecularWeight": 0
+              },
+              "stockConcentration": 1,
+              "stockConcentrationUnit": "M",
+              "finalConcentration": 100,
+              "finalConcentrationUnit": "µM",
+              "volumeNeeded": 0.000005,
+              "volumeUnit": "mL",
+              "optimizedVolumeDisplay": "5.00 µL",
+              "percentOfTotal": 0.01
+            }
+          ],
+          "createdAt": "2025-07-26T03:45:26.300Z",
+          "updatedAt": "2025-07-26T03:45:26.301Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Unit Conversion Dilution",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 100,
+            "finalConcentrationUnit": "µM",
+            "volumeNeeded": 0.000005,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5.00 µL",
+            "percentOfTotal": 0.01
+          }
+        ],
+        "solventVolume": 49.995000000000005,
+        "warnings": [
+          {
+            "type": "small_volume",
+            "message": "必要なストック体積が非常に小さいです。ピペッティングが困難な可能性があります。",
+            "severity": "medium"
+          }
+        ],
+        "errors": [],
+        "calculationSteps": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501525664_j06du00k4",
+      "timestamp": "2025-07-26T03:45:25.664Z",
+      "type": "dilution",
+      "name": "Basic Dilution",
+      "inputData": {
+        "components": [],
+        "name": "Basic Dilution",
+        "stockConcentration": 1000,
+        "stockConcentrationUnit": "mM",
+        "finalConcentration": 100,
+        "finalConcentrationUnit": "mM",
+        "finalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "Basic Dilution",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "Basic Dilution",
+                "molecularWeight": 0
+              },
+              "stockConcentration": 1000,
+              "stockConcentrationUnit": "mM",
+              "finalConcentration": 100,
+              "finalConcentrationUnit": "mM",
+              "volumeNeeded": 0.010000000000000002,
+              "volumeUnit": "mL",
+              "optimizedVolumeDisplay": "10.00 mL",
+              "percentOfTotal": 10.000000000000002
+            }
+          ],
+          "createdAt": "2025-07-26T03:45:25.664Z",
+          "updatedAt": "2025-07-26T03:45:25.664Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Basic Dilution",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1000,
+            "stockConcentrationUnit": "mM",
+            "finalConcentration": 100,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.010000000000000002,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10.00 mL",
+            "percentOfTotal": 10.000000000000002
+          }
+        ],
+        "solventVolume": 90,
+        "warnings": [],
+        "errors": [],
+        "calculationSteps": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501525661_z8o71lyba",
+      "timestamp": "2025-07-26T03:45:25.661Z",
+      "type": "stock",
+      "name": "10 M NaOH Stock",
+      "inputData": {
+        "components": [],
+        "name": "10 M NaOH Stock",
+        "reagentName": "NaOH",
+        "molecularWeight": 40,
+        "targetConcentration": 10,
+        "concentrationUnit": "M",
+        "volume": 50,
+        "volumeUnit": "mL",
+        "purity": 98
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "NaOH ストック溶液",
+          "totalVolume": 50,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "NaOH",
+                "molecularWeight": 40
+              },
+              "stockConcentration": 10,
+              "stockConcentrationUnit": "M",
+              "finalConcentration": 10,
+              "finalConcentrationUnit": "M",
+              "volumeNeeded": 20.408163265306122,
+              "volumeUnit": "g",
+              "optimizedVolumeDisplay": "20.41 g",
+              "percentOfTotal": 100,
+              "massEquivalent": 20.408163265306122,
+              "massUnit": "g"
+            }
+          ],
+          "createdAt": "2025-07-26T03:45:25.661Z",
+          "updatedAt": "2025-07-26T03:45:25.661Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaOH",
+              "molecularWeight": 40
+            },
+            "stockConcentration": 10,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "M",
+            "volumeNeeded": 20.408163265306122,
+            "volumeUnit": "g",
+            "optimizedVolumeDisplay": "20.41 g",
+            "percentOfTotal": 100,
+            "massEquivalent": 20.408163265306122,
+            "massUnit": "g"
+          }
+        ],
+        "solventVolume": 50,
+        "warnings": [
+          {
+            "type": "large_volume",
+            "message": "大きい質量が必要です。より小さい体積またはより濃縮されたストックの作成を検討してください。",
+            "severity": "low"
+          }
+        ],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501525051_uky3rbtj2",
+      "timestamp": "2025-07-26T03:45:25.051Z",
+      "type": "stock",
+      "name": "1 M NaCl Stock",
+      "inputData": {
+        "components": [],
+        "name": "1 M NaCl Stock",
+        "reagentName": "NaCl",
+        "molecularWeight": 58.44,
+        "targetConcentration": 1,
+        "concentrationUnit": "M",
+        "volume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "NaCl ストック溶液",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "NaCl",
+                "molecularWeight": 58.44
+              },
+              "stockConcentration": 1,
+              "stockConcentrationUnit": "M",
+              "finalConcentration": 1,
+              "finalConcentrationUnit": "M",
+              "volumeNeeded": 5.844,
+              "volumeUnit": "g",
+              "optimizedVolumeDisplay": "5.84 g",
+              "percentOfTotal": 100,
+              "massEquivalent": 5.844,
+              "massUnit": "g"
+            }
+          ],
+          "createdAt": "2025-07-26T03:45:25.051Z",
+          "updatedAt": "2025-07-26T03:45:25.051Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 58.44
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1,
+            "finalConcentrationUnit": "M",
+            "volumeNeeded": 5.844,
+            "volumeUnit": "g",
+            "optimizedVolumeDisplay": "5.84 g",
+            "percentOfTotal": 100,
+            "massEquivalent": 5.844,
+            "massUnit": "g"
+          }
+        ],
+        "solventVolume": 100,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501525048_cqooeocfm",
+      "timestamp": "2025-07-26T03:45:25.048Z",
+      "type": "buffer",
+      "name": "50 mM Tris-HCl pH 7.4",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris-HCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "50 mM Tris-HCl pH 7.4",
+        "totalVolume": 500,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "50 mM Tris-HCl pH 7.4",
+          "totalVolume": 500,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T03:45:25.047Z",
+          "updatedAt": "2025-07-26T03:45:25.047Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris-HCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.025,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "25 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 475,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501524480_m37699s97",
+      "timestamp": "2025-07-26T03:45:24.480Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T03:45:24.480Z",
+          "updatedAt": "2025-07-26T03:45:24.480Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753501520434_pumdhcm09",
+      "timestamp": "2025-07-26T03:45:20.434Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-26T03:45:20.433Z",
+          "updatedAt": "2025-07-26T03:45:20.433Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370470936_laip5mehd",
+      "timestamp": "2025-07-24T15:21:10.936Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:10.935Z",
+          "updatedAt": "2025-07-24T15:21:10.935Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370468769_iqs6sh89y",
+      "timestamp": "2025-07-24T15:21:08.769Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:08.768Z",
+          "updatedAt": "2025-07-24T15:21:08.768Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370468253_qkuhd4suy",
+      "timestamp": "2025-07-24T15:21:08.253Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:08.252Z",
+          "updatedAt": "2025-07-24T15:21:08.252Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tri",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370468042_o9ohg5mf6",
+      "timestamp": "2025-07-24T15:21:08.042Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:08.042Z",
+          "updatedAt": "2025-07-24T15:21:08.042Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tr",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370467653_ihpvgtelt",
+      "timestamp": "2025-07-24T15:21:07.653Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:07.652Z",
+          "updatedAt": "2025-07-24T15:21:07.652Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "T",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370466619_zeok3tigq",
+      "timestamp": "2025-07-24T15:21:06.619Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:06.619Z",
+          "updatedAt": "2025-07-24T15:21:06.619Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "T",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370466457_oddtjoer7",
+      "timestamp": "2025-07-24T15:21:06.457Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:06.457Z",
+          "updatedAt": "2025-07-24T15:21:06.457Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tr",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370466276_0g6wp4q52",
+      "timestamp": "2025-07-24T15:21:06.276Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:21:06.275Z",
+          "updatedAt": "2025-07-24T15:21:06.275Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tri",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370453257_kiw750q05",
+      "timestamp": "2025-07-24T15:20:53.258Z",
+      "type": "stock",
+      "name": "簡易ストック",
+      "inputData": {
+        "components": [],
+        "name": "簡易ストック",
+        "reagentName": "EDTA",
+        "targetConcentration": 500,
+        "concentrationUnit": "mM",
+        "volume": 10,
+        "volumeUnit": "mL",
+        "molecularWeight": 6
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "EDTA ストック溶液",
+          "totalVolume": 10,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "EDTA",
+                "molecularWeight": 6
+              },
+              "stockConcentration": 500,
+              "stockConcentrationUnit": "mM",
+              "finalConcentration": 500,
+              "finalConcentrationUnit": "mM",
+              "volumeNeeded": 30,
+              "volumeUnit": "mg",
+              "optimizedVolumeDisplay": "30 mg",
+              "percentOfTotal": 100,
+              "massEquivalent": 30,
+              "massUnit": "mg"
+            }
+          ],
+          "createdAt": "2025-07-24T15:20:53.257Z",
+          "updatedAt": "2025-07-24T15:20:53.257Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "EDTA",
+              "molecularWeight": 6
+            },
+            "stockConcentration": 500,
+            "stockConcentrationUnit": "mM",
+            "finalConcentration": 500,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 30,
+            "volumeUnit": "mg",
+            "optimizedVolumeDisplay": "30 mg",
+            "percentOfTotal": 100,
+            "massEquivalent": 30,
+            "massUnit": "mg"
+          }
+        ],
+        "solventVolume": 10,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431162_pe94ir4l6",
+      "timestamp": "2025-07-24T15:20:31.162Z",
+      "type": "dilution",
+      "name": "簡易希釈",
+      "inputData": {
+        "components": [],
+        "name": "簡易希釈",
+        "stockConcentration": 100,
+        "stockConcentrationUnit": "mM",
+        "finalConcentration": 10,
+        "finalConcentrationUnit": "mM",
+        "finalVolume": 10,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易希釈",
+          "totalVolume": 10,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "簡易希釈",
+                "molecularWeight": 0
+              },
+              "stockConcentration": 100,
+              "stockConcentrationUnit": "mM",
+              "finalConcentration": 10,
+              "finalConcentrationUnit": "mM",
+              "volumeNeeded": 0.001,
+              "volumeUnit": "mL",
+              "optimizedVolumeDisplay": "1.00 mL",
+              "percentOfTotal": 10
+            }
+          ],
+          "createdAt": "2025-07-24T15:20:31.162Z",
+          "updatedAt": "2025-07-24T15:20:31.162Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "簡易希釈",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 100,
+            "stockConcentrationUnit": "mM",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.00 mL",
+            "percentOfTotal": 10
+          }
+        ],
+        "solventVolume": 9.000000000000002,
+        "warnings": [],
+        "errors": [],
+        "calculationSteps": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431161_9n3yosxhs",
+      "timestamp": "2025-07-24T15:20:31.161Z",
+      "type": "buffer",
+      "name": "簡易バッファー",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "簡易バッファー",
+        "totalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "簡易バッファー",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:20:31.161Z",
+          "updatedAt": "2025-07-24T15:20:31.161Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.005000000000000001,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 95,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431159_c9nq1uuxx",
+      "timestamp": "2025-07-24T15:20:31.159Z",
+      "type": "dilution",
+      "name": "Unit Conversion Dilution",
+      "inputData": {
+        "components": [],
+        "name": "Unit Conversion Dilution",
+        "stockConcentration": 1,
+        "stockConcentrationUnit": "M",
+        "finalConcentration": 100,
+        "finalConcentrationUnit": "µM",
+        "finalVolume": 50,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "Unit Conversion Dilution",
+          "totalVolume": 50,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "Unit Conversion Dilution",
+                "molecularWeight": 0
+              },
+              "stockConcentration": 1,
+              "stockConcentrationUnit": "M",
+              "finalConcentration": 100,
+              "finalConcentrationUnit": "µM",
+              "volumeNeeded": 0.000005,
+              "volumeUnit": "mL",
+              "optimizedVolumeDisplay": "5.00 µL",
+              "percentOfTotal": 0.01
+            }
+          ],
+          "createdAt": "2025-07-24T15:20:31.159Z",
+          "updatedAt": "2025-07-24T15:20:31.159Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Unit Conversion Dilution",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 100,
+            "finalConcentrationUnit": "µM",
+            "volumeNeeded": 0.000005,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "5.00 µL",
+            "percentOfTotal": 0.01
+          }
+        ],
+        "solventVolume": 49.995000000000005,
+        "warnings": [
+          {
+            "type": "small_volume",
+            "message": "必要なストック体積が非常に小さいです。ピペッティングが困難な可能性があります。",
+            "severity": "medium"
+          }
+        ],
+        "errors": [],
+        "calculationSteps": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431157_liti813eg",
+      "timestamp": "2025-07-24T15:20:31.157Z",
+      "type": "dilution",
+      "name": "Basic Dilution",
+      "inputData": {
+        "components": [],
+        "name": "Basic Dilution",
+        "stockConcentration": 1000,
+        "stockConcentrationUnit": "mM",
+        "finalConcentration": 100,
+        "finalConcentrationUnit": "mM",
+        "finalVolume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "Basic Dilution",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "Basic Dilution",
+                "molecularWeight": 0
+              },
+              "stockConcentration": 1000,
+              "stockConcentrationUnit": "mM",
+              "finalConcentration": 100,
+              "finalConcentrationUnit": "mM",
+              "volumeNeeded": 0.010000000000000002,
+              "volumeUnit": "mL",
+              "optimizedVolumeDisplay": "10.00 mL",
+              "percentOfTotal": 10.000000000000002
+            }
+          ],
+          "createdAt": "2025-07-24T15:20:31.157Z",
+          "updatedAt": "2025-07-24T15:20:31.157Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Basic Dilution",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1000,
+            "stockConcentrationUnit": "mM",
+            "finalConcentration": 100,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.010000000000000002,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10.00 mL",
+            "percentOfTotal": 10.000000000000002
+          }
+        ],
+        "solventVolume": 90,
+        "warnings": [],
+        "errors": [],
+        "calculationSteps": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431111_lr1azk7eq",
+      "timestamp": "2025-07-24T15:20:31.111Z",
+      "type": "stock",
+      "name": "10 M NaOH Stock",
+      "inputData": {
+        "components": [],
+        "name": "10 M NaOH Stock",
+        "reagentName": "NaOH",
+        "molecularWeight": 40,
+        "targetConcentration": 10,
+        "concentrationUnit": "M",
+        "volume": 50,
+        "volumeUnit": "mL",
+        "purity": 98
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "NaOH ストック溶液",
+          "totalVolume": 50,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "NaOH",
+                "molecularWeight": 40
+              },
+              "stockConcentration": 10,
+              "stockConcentrationUnit": "M",
+              "finalConcentration": 10,
+              "finalConcentrationUnit": "M",
+              "volumeNeeded": 20.408163265306122,
+              "volumeUnit": "g",
+              "optimizedVolumeDisplay": "20.41 g",
+              "percentOfTotal": 100,
+              "massEquivalent": 20.408163265306122,
+              "massUnit": "g"
+            }
+          ],
+          "createdAt": "2025-07-24T15:20:31.111Z",
+          "updatedAt": "2025-07-24T15:20:31.111Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaOH",
+              "molecularWeight": 40
+            },
+            "stockConcentration": 10,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "M",
+            "volumeNeeded": 20.408163265306122,
+            "volumeUnit": "g",
+            "optimizedVolumeDisplay": "20.41 g",
+            "percentOfTotal": 100,
+            "massEquivalent": 20.408163265306122,
+            "massUnit": "g"
+          }
+        ],
+        "solventVolume": 50,
+        "warnings": [
+          {
+            "type": "large_volume",
+            "message": "大きい質量が必要です。より小さい体積またはより濃縮されたストックの作成を検討してください。",
+            "severity": "low"
+          }
+        ],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431110_8z5a7g0ku",
+      "timestamp": "2025-07-24T15:20:31.110Z",
+      "type": "stock",
+      "name": "1 M NaCl Stock",
+      "inputData": {
+        "components": [],
+        "name": "1 M NaCl Stock",
+        "reagentName": "NaCl",
+        "molecularWeight": 58.44,
+        "targetConcentration": 1,
+        "concentrationUnit": "M",
+        "volume": 100,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "NaCl ストック溶液",
+          "totalVolume": 100,
+          "totalVolumeUnit": "mL",
+          "components": [
+            {
+              "reagent": {
+                "name": "NaCl",
+                "molecularWeight": 58.44
+              },
+              "stockConcentration": 1,
+              "stockConcentrationUnit": "M",
+              "finalConcentration": 1,
+              "finalConcentrationUnit": "M",
+              "volumeNeeded": 5.844,
+              "volumeUnit": "g",
+              "optimizedVolumeDisplay": "5.84 g",
+              "percentOfTotal": 100,
+              "massEquivalent": 5.844,
+              "massUnit": "g"
+            }
+          ],
+          "createdAt": "2025-07-24T15:20:31.110Z",
+          "updatedAt": "2025-07-24T15:20:31.110Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 58.44
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1,
+            "finalConcentrationUnit": "M",
+            "volumeNeeded": 5.844,
+            "volumeUnit": "g",
+            "optimizedVolumeDisplay": "5.84 g",
+            "percentOfTotal": 100,
+            "massEquivalent": 5.844,
+            "massUnit": "g"
+          }
+        ],
+        "solventVolume": 100,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431108_n5djvgn76",
+      "timestamp": "2025-07-24T15:20:31.108Z",
+      "type": "buffer",
+      "name": "50 mM Tris-HCl pH 7.4",
+      "inputData": {
+        "components": [
+          {
+            "name": "Tris-HCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 50,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "50 mM Tris-HCl pH 7.4",
+        "totalVolume": 500,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "50 mM Tris-HCl pH 7.4",
+          "totalVolume": 500,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:20:31.108Z",
+          "updatedAt": "2025-07-24T15:20:31.108Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "Tris-HCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 50,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.025,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "25 mL",
+            "percentOfTotal": 5
+          }
+        ],
+        "solventVolume": 475,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431107_v9ko49nxe",
+      "timestamp": "2025-07-24T15:20:31.107Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:20:31.107Z",
+          "updatedAt": "2025-07-24T15:20:31.107Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    },
+    {
+      "id": "hist_1753370431077_zyr9h17ri",
+      "timestamp": "2025-07-24T15:20:31.077Z",
+      "type": "buffer",
+      "name": "1× PBS Buffer",
+      "inputData": {
+        "components": [
+          {
+            "name": "NaCl",
+            "stockConc": 5,
+            "stockUnit": "M",
+            "finalConc": 137,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KCl",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 2.7,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "Na2HPO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 10,
+            "finalUnit": "mM"
+          },
+          {
+            "name": "KH2PO4",
+            "stockConc": 1,
+            "stockUnit": "M",
+            "finalConc": 1.8,
+            "finalUnit": "mM"
+          }
+        ],
+        "name": "1× PBS Buffer",
+        "totalVolume": 1000,
+        "volumeUnit": "mL"
+      },
+      "result": {
+        "recipe": {
+          "id": "",
+          "name": "1× PBS Buffer",
+          "totalVolume": 1000,
+          "totalVolumeUnit": "mL",
+          "components": [],
+          "createdAt": "2025-07-24T15:20:31.076Z",
+          "updatedAt": "2025-07-24T15:20:31.076Z"
+        },
+        "components": [
+          {
+            "reagent": {
+              "name": "NaCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 5,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 137,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0274,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "27.4 mL",
+            "percentOfTotal": 2.74
+          },
+          {
+            "reagent": {
+              "name": "KCl",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 2.7,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0027,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "2.7 mL",
+            "percentOfTotal": 0.27
+          },
+          {
+            "reagent": {
+              "name": "Na2HPO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 10,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.01,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "10 mL",
+            "percentOfTotal": 1
+          },
+          {
+            "reagent": {
+              "name": "KH2PO4",
+              "molecularWeight": 0
+            },
+            "stockConcentration": 1,
+            "stockConcentrationUnit": "M",
+            "finalConcentration": 1.8,
+            "finalConcentrationUnit": "mM",
+            "volumeNeeded": 0.0018,
+            "volumeUnit": "mL",
+            "optimizedVolumeDisplay": "1.8 mL",
+            "percentOfTotal": 0.18
+          }
+        ],
+        "solventVolume": 958.0999999999999,
+        "warnings": [],
+        "errors": []
+      },
+      "tags": [],
+      "starred": false
+    }
+  ],
   "enableHistory": true,
   "maxHistoryEntries": 100,
   "customReagentCategories": [],

@@ -1930,3 +1930,256 @@
 	color: var(--text-error);
 	font-size: 0.9rem;
 }
+
+/* Serial Dilution Styles */
+.serial-dilution-targets-container {
+	margin: 1rem 0;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.serial-dilution-target-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.serial-dilution-target-row:last-child {
+	margin-bottom: 0;
+}
+
+.serial-dilution-remove-btn {
+	min-width: 32px;
+	height: 32px;
+	padding: 0;
+	border-radius: 50%;
+	font-size: 1.2rem;
+	font-weight: bold;
+	line-height: 1;
+	background: var(--background-modifier-error);
+	color: var(--text-error);
+	border: 1px solid var(--text-error);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.serial-dilution-remove-btn:hover {
+	background: var(--text-error);
+	color: var(--text-on-accent);
+}
+
+.serial-dilution-summary {
+	margin-bottom: 2rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.serial-dilution-summary h3 {
+	margin: 0 0 1rem 0;
+	color: var(--text-accent);
+	font-size: 1.2rem;
+}
+
+.serial-dilution-summary ul {
+	margin: 0;
+	padding-left: 1.5rem;
+}
+
+.serial-dilution-summary li {
+	margin-bottom: 0.5rem;
+	color: var(--text-normal);
+}
+
+.serial-dilution-steps {
+	margin-bottom: 2rem;
+}
+
+.serial-dilution-steps h3 {
+	margin: 0 0 1rem 0;
+	color: var(--text-accent);
+	font-size: 1.2rem;
+}
+
+.serial-dilution-steps ol {
+	margin: 0;
+	padding-left: 2rem;
+}
+
+.serial-dilution-steps li {
+	margin-bottom: 0.75rem;
+	color: var(--text-normal);
+	line-height: 1.4;
+}
+
+.serial-dilution-addition {
+	margin-bottom: 2rem;
+}
+
+.serial-dilution-addition h3 {
+	margin: 0 0 1rem 0;
+	color: var(--text-accent);
+	font-size: 1.2rem;
+}
+
+.serial-dilution-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-top: 1rem;
+}
+
+.serial-dilution-table th,
+.serial-dilution-table td {
+	padding: 0.75rem;
+	text-align: left;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.serial-dilution-table th {
+	background: var(--background-secondary);
+	font-weight: 600;
+	color: var(--text-accent);
+}
+
+.serial-dilution-table tr:hover {
+	background: var(--background-secondary);
+}
+
+.serial-dilution-export {
+	margin-top: 2rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 8px;
+}
+
+.serial-dilution-export h3 {
+	margin: 0 0 1rem 0;
+	color: var(--text-accent);
+	font-size: 1.2rem;
+}
+
+.buffer-calc-export-buttons {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.buffer-calc-export-buttons button {
+	flex: 1;
+	min-width: 120px;
+}
+
+/* Serial dilution badge styles */
+.history-badge-serial-dilution {
+	background: var(--color-cyan);
+	color: white;
+}
+
+/* Responsive adjustments for serial dilution */
+@media (max-width: 768px) {
+	.serial-dilution-target-row {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+
+	.serial-dilution-remove-btn {
+		align-self: flex-end;
+		margin-top: 0.5rem;
+	}
+
+	.serial-dilution-table {
+		font-size: 0.9rem;
+	}
+
+	.serial-dilution-table th,
+	.serial-dilution-table td {
+		padding: 0.5rem;
+	}
+
+	.buffer-calc-export-buttons {
+		flex-direction: column;
+	}
+
+	.buffer-calc-export-buttons button {
+		width: 100%;
+		margin-bottom: 0.5rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.serial-dilution-summary,
+	.serial-dilution-export {
+		padding: 0.75rem;
+	}
+
+	.serial-dilution-steps ol,
+	.serial-dilution-summary ul {
+		padding-left: 1rem;
+	}
+
+	.serial-dilution-table {
+		font-size: 0.8rem;
+	}
+
+	.serial-dilution-table th,
+	.serial-dilution-table td {
+		padding: 0.25rem;
+	}
+}
+
+/* Serial Dilution Target Concentration Controls */
+.serial-dilution-target-buttons {
+	display: flex;
+	gap: 0.25rem;
+	margin-left: 0.5rem;
+}
+
+.buffer-calc-button-small {
+	padding: 0.25rem 0.5rem;
+	font-size: 0.8rem;
+	min-width: 24px;
+	height: 24px;
+	line-height: 1;
+}
+
+.serial-dilution-insert-btn {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.serial-dilution-insert-btn:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.serial-dilution-target-row {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.serial-dilution-target-row .buffer-calc-input {
+	flex: 1;
+}
+
+/* Responsive adjustments for target buttons */
+@media (max-width: 768px) {
+	.serial-dilution-target-buttons {
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+	
+	.buffer-calc-button-small {
+		font-size: 0.7rem;
+		min-width: 20px;
+		height: 20px;
+		padding: 0.125rem 0.25rem;
+	}
+}

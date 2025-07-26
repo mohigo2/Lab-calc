@@ -3,6 +3,12 @@ import {
 	BufferData,
 	StockData,
 	DilutionData,
+	SerialDilutionData,
+	SerialDilutionResult,
+	SerialDilutionStep,
+	CellAdditionInstruction,
+	ProtocolSummary,
+	ExportData,
 	CalculationResult,
 	CalculatedComponent,
 	Warning,
@@ -708,5 +714,357 @@ export class CalculationEngine {
 			errors,
 			calculationSteps
 		};
+	}
+
+	calculateSerialDilution(data: SerialDilutionData): SerialDilutionResult {
+		const errors: ValidationError[] = [];
+		const warnings: Warning[] = [];
+		const steps: SerialDilutionStep[] = [];
+		const cellAdditionInstructions: CellAdditionInstruction[] = [];
+
+		// Validate input data
+		this.validateSerialDilutionData(data, errors);
+
+		if (errors.length > 0) {
+			return {
+				steps: [],
+				cellAdditionInstructions: [],
+				warnings,
+				errors,
+				protocolSummary: {
+					totalSteps: 0,
+					totalVolume: 0,
+					volumeUnit: data.dilutionVolumeUnit,
+					highestDilutionFactor: 0,
+					estimatedTime: '0 min',
+					requiredTubes: 0
+				}
+			};
+		}
+
+		// Convert all concentrations to a common unit (M) for calculations
+		const stockConcM = this.convertConcentration(
+			data.stockConcentration,
+			data.stockUnit,
+			ConcentrationUnit.MOLAR
+		);
+
+		const targetConcsM = data.targetConcentrations.map(conc =>
+			this.convertConcentration(conc, data.targetUnit, ConcentrationUnit.MOLAR)
+		);
+
+		// Sort target concentrations in descending order
+		const sortedTargetsM = targetConcsM.sort((a, b) => b - a);
+
+		// Convert volumes to common unit (L) for calculations
+		const dilutionVolumeL = this.convertVolume(
+			data.dilutionVolume,
+			data.dilutionVolumeUnit,
+			VolumeUnit.LITER
+		);
+
+		const cellVolumeL = this.convertVolume(
+			data.cellVolume,
+			data.cellVolumeUnit,
+			VolumeUnit.LITER
+		);
+
+		const additionVolumeL = this.convertVolume(
+			data.additionVolume,
+			data.additionVolumeUnit,
+			VolumeUnit.LITER
+		);
+
+		// Calculate required dilution steps
+		const dilutionPlan = this.planSerialDilution(
+			stockConcM,
+			sortedTargetsM,
+			dilutionVolumeL,
+			cellVolumeL,
+			additionVolumeL
+		);
+
+		// Generate step-by-step dilution protocol
+		let currentConc = stockConcM;
+		let stepNumber = 1;
+
+		for (const planStep of dilutionPlan) {
+			const targetConc = planStep.targetConcentration;
+			const dilutionFactor = currentConc / targetConc;
+			
+			// Calculate volumes needed
+			const stockVolumeNeeded = dilutionVolumeL / dilutionFactor;
+			const solventVolumeNeeded = dilutionVolumeL - stockVolumeNeeded;
+
+			// Create single dilution step (中間ステップ自動生成は廃止)
+			const step: SerialDilutionStep = {
+				stepNumber,
+				name: `Step ${stepNumber}`,
+				fromConcentration: this.convertConcentration(currentConc, ConcentrationUnit.MOLAR, data.stockUnit),
+				toConcentration: this.convertConcentration(targetConc, ConcentrationUnit.MOLAR, data.targetUnit),
+				concentrationUnit: data.targetUnit,
+				stockVolume: this.convertVolume(stockVolumeNeeded, VolumeUnit.LITER, data.dilutionVolumeUnit),
+				solventVolume: this.convertVolume(solventVolumeNeeded, VolumeUnit.LITER, data.dilutionVolumeUnit),
+				totalVolume: this.convertVolume(dilutionVolumeL, VolumeUnit.LITER, data.dilutionVolumeUnit),
+				volumeUnit: data.dilutionVolumeUnit,
+				dilutionFactor,
+				isIntermediateStep: false,
+				description: this.generateStepDescription(
+					this.convertConcentration(currentConc, ConcentrationUnit.MOLAR, data.stockUnit),
+					this.convertConcentration(targetConc, ConcentrationUnit.MOLAR, data.targetUnit),
+					this.convertVolume(stockVolumeNeeded, VolumeUnit.LITER, data.dilutionVolumeUnit),
+					this.convertVolume(solventVolumeNeeded, VolumeUnit.LITER, data.dilutionVolumeUnit),
+					data.stockUnit,
+					data.targetUnit,
+					data.dilutionVolumeUnit,
+					stepNumber === 1
+				)
+			};
+
+			steps.push(step);
+			stepNumber++;
+			currentConc = targetConc;
+		}
+
+		// Cell addition instructions removed as per user request
+
+		// Generate warnings for unusual conditions
+		this.checkSerialDilutionWarnings(data, steps, warnings);
+
+		// Create protocol summary
+		const protocolSummary: ProtocolSummary = {
+			totalSteps: steps.length,
+			totalVolume: steps.reduce((sum, step) => sum + step.totalVolume, 0),
+			volumeUnit: data.dilutionVolumeUnit,
+			highestDilutionFactor: Math.max(...steps.map(s => s.dilutionFactor)),
+			estimatedTime: this.estimateProtocolTime(steps.length),
+			requiredTubes: steps.length + 1 // +1 for stock
+		};
+
+		// Generate export data
+		const exportData: ExportData = {
+			dilutionTable: this.generateDilutionTable(steps),
+			additionTable: this.generateAdditionTable(cellAdditionInstructions),
+			csvFormat: this.generateCSVExport(steps, cellAdditionInstructions),
+			markdownFormat: this.generateMarkdownExport(steps, cellAdditionInstructions, protocolSummary)
+		};
+
+		return {
+			steps,
+			cellAdditionInstructions,
+			warnings,
+			errors,
+			protocolSummary,
+			exportData
+		};
+	}
+
+	private validateSerialDilutionData(data: SerialDilutionData, errors: ValidationError[]): void {
+		if (!data.stockConcentration || data.stockConcentration <= 0) {
+			errors.push({
+				type: ErrorType.INVALID_CONCENTRATION,
+				message: 'ストック溶液の濃度が無効です',
+				field: 'stockConcentration'
+			});
+		}
+
+		if (!data.cellVolume || data.cellVolume <= 0) {
+			errors.push({
+				type: ErrorType.INVALID_VOLUME,
+				message: '細胞溶液の量が無効です',
+				field: 'cellVolume'
+			});
+		}
+
+		if (!data.additionVolume || data.additionVolume <= 0) {
+			errors.push({
+				type: ErrorType.INVALID_VOLUME,
+				message: '細胞への添加量が無効です',
+				field: 'additionVolume'
+			});
+		}
+
+		if (!data.dilutionVolume || data.dilutionVolume <= 0) {
+			errors.push({
+				type: ErrorType.INVALID_VOLUME,
+				message: '希釈段階での作成量が無効です',
+				field: 'dilutionVolume'
+			});
+		}
+
+		if (!data.targetConcentrations || data.targetConcentrations.length === 0) {
+			errors.push({
+				type: ErrorType.MISSING_REQUIRED_FIELD,
+				message: '最終目標濃度が指定されていません',
+				field: 'targetConcentrations'
+			});
+		}
+
+		if (data.targetConcentrations) {
+			data.targetConcentrations.forEach((conc, index) => {
+				if (conc <= 0) {
+					errors.push({
+						type: ErrorType.INVALID_CONCENTRATION,
+						message: `目標濃度 ${index + 1} が無効です`,
+						field: `targetConcentrations[${index}]`
+					});
+				}
+			});
+		}
+	}
+
+	private planSerialDilution(
+		stockConcM: number,
+		targetConcsM: number[],
+		dilutionVolumeL: number,
+		cellVolumeL: number,
+		additionVolumeL: number
+	): Array<{ targetConcentration: number }> {
+		// Calculate required concentrations accounting for cell dilution
+		const requiredConcsM = targetConcsM.map(targetM => {
+			// Account for dilution when added to cells
+			return targetM * (cellVolumeL + additionVolumeL) / additionVolumeL;
+		});
+
+		return requiredConcsM.map(conc => ({ targetConcentration: conc }));
+	}
+
+
+	private generateStepDescription(
+		fromConc: number,
+		toConc: number,
+		stockVolume: number,
+		solventVolume: number,
+		stockUnit: ConcentrationUnit,
+		targetUnit: ConcentrationUnit,
+		volumeUnit: VolumeUnit,
+		isFirstStep: boolean
+	): string {
+		const fromStr = this.formatConcentration(fromConc, stockUnit);
+		const toStr = this.formatConcentration(toConc, targetUnit);
+		const stockVolOpt = ConversionUtils.optimizeVolumeDisplay(stockVolume, volumeUnit);
+		const solventVolOpt = ConversionUtils.optimizeVolumeDisplay(solventVolume, volumeUnit);
+		const stockVolStr = `${stockVolOpt.value.toFixed(this.settings.decimalPlaces)} ${stockVolOpt.unit}`;
+		const solventVolStr = `${solventVolOpt.value.toFixed(this.settings.decimalPlaces)} ${solventVolOpt.unit}`;
+		
+		const source = isFirstStep ? 'Stock' : '前ステップ';
+		
+		return `${fromStr} ${source}を${stockVolStr}とり、溶媒${solventVolStr}と混合 (→${toStr})`;
+	}
+
+	private formatConcentration(
+		concentration: number, 
+		unit: ConcentrationUnit
+	): string {
+		return `${concentration.toFixed(this.settings.decimalPlaces)} ${unit}`;
+	}
+
+
+	private checkSerialDilutionWarnings(
+		data: SerialDilutionData,
+		steps: SerialDilutionStep[],
+		warnings: Warning[]
+	): void {
+		// Check for very small volumes
+		const minVolume = 1; // 1 µL minimum
+		steps.forEach((step, index) => {
+			if (step.stockVolume < minVolume && step.volumeUnit === VolumeUnit.MICROLITER) {
+				warnings.push({
+					type: WarningType.SMALL_VOLUME,
+					message: `Step ${step.stepNumber}: 必要な容量が ${step.stockVolume} ${step.volumeUnit} と小さすぎます`,
+					severity: 'high'
+				});
+			}
+		});
+
+		// Check for excessive dilution factors
+		const maxReasonableDilution = 1000;
+		steps.forEach(step => {
+			if (step.dilutionFactor > maxReasonableDilution) {
+				warnings.push({
+					type: WarningType.UNUSUAL_DILUTION_FACTOR,
+					message: `Step ${step.stepNumber}: 希釈倍率が ${step.dilutionFactor.toFixed(0)} 倍と高すぎます`,
+					severity: 'medium'
+				});
+			}
+		});
+	}
+
+	private estimateProtocolTime(numSteps: number): string {
+		const timePerStep = 3; // minutes per step
+		const totalMinutes = numSteps * timePerStep;
+		
+		if (totalMinutes < 60) {
+			return `${totalMinutes} min`;
+		} else {
+			const hours = Math.floor(totalMinutes / 60);
+			const minutes = totalMinutes % 60;
+			return `${hours}h ${minutes}min`;
+		}
+	}
+
+	private generateDilutionTable(steps: SerialDilutionStep[]): string[][] {
+		const headers = ['Step', 'From', 'To', 'Stock Volume', 'Solvent Volume', 'Dilution Factor'];
+		const rows = steps.map(step => [
+			step.name,
+			`${step.fromConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}`,
+			`${step.toConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}`,
+			`${step.stockVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}`,
+			`${step.solventVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}`,
+			`${step.dilutionFactor.toFixed(1)}x`
+		]);
+		
+		return [headers, ...rows];
+	}
+
+	private generateAdditionTable(instructions: CellAdditionInstruction[]): string[][] {
+		const headers = ['Target Concentration', 'Use Step', 'Addition Volume', 'Final Cell Volume'];
+		const rows = instructions.map(instruction => [
+			`${instruction.targetConcentration.toFixed(this.settings.decimalPlaces)} ${instruction.concentrationUnit}`,
+			instruction.stepName,
+			`${instruction.additionVolume.toFixed(this.settings.decimalPlaces)} ${instruction.volumeUnit}`,
+			`${instruction.finalCellVolume.toFixed(this.settings.decimalPlaces)} ${instruction.volumeUnit}`
+		]);
+		
+		return [headers, ...rows];
+	}
+
+	private generateCSVExport(steps: SerialDilutionStep[], instructions: CellAdditionInstruction[]): string {
+		const dilutionTable = this.generateDilutionTable(steps);
+		const additionTable = this.generateAdditionTable(instructions);
+		
+		let csv = '# Serial Dilution Protocol\n\n';
+		csv += '## Dilution Steps\n';
+		csv += dilutionTable.map(row => row.join(',')).join('\n') + '\n\n';
+		csv += '## Cell Addition Instructions\n';
+		csv += additionTable.map(row => row.join(',')).join('\n');
+		
+		return csv;
+	}
+
+	private generateMarkdownExport(
+		steps: SerialDilutionStep[], 
+		instructions: CellAdditionInstruction[],
+		summary: ProtocolSummary
+	): string {
+		let md = '# Serial Dilution Protocol\n\n';
+		
+		md += '## Protocol Summary\n';
+		md += `- Total Steps: ${summary.totalSteps}\n`;
+		md += `- Required Tubes: ${summary.requiredTubes}\n`;
+		md += `- Estimated Time: ${summary.estimatedTime}\n`;
+		md += `- Highest Dilution Factor: ${summary.highestDilutionFactor.toFixed(0)}x\n\n`;
+		
+		md += '## Part 1: Serial Dilution Steps\n';
+		steps.forEach((step, index) => {
+			md += `${index + 1}. ${step.description}\n`;
+		});
+		
+		md += '\n## Part 2: Cell Addition Instructions\n';
+		instructions.forEach((instruction, index) => {
+			md += `${index + 1}. For ${instruction.targetConcentration.toFixed(this.settings.decimalPlaces)} ${instruction.concentrationUnit}: Use ${instruction.stepName}, add ${instruction.additionVolume.toFixed(this.settings.decimalPlaces)} ${instruction.volumeUnit} to cells\n`;
+		});
+		
+		return md;
 	}
 }

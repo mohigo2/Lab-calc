@@ -4,6 +4,7 @@ import {
 	BufferData,
 	StockData,
 	DilutionData,
+	SerialDilutionData,
 	VolumeUnit,
 	ConcentrationUnit
 } from '../types';
@@ -283,9 +284,9 @@ export class TemplateDatabase {
 				template: {
 					name: 'BSA標準希釈',
 					stockConcentration: 2,
-					stockConcentrationUnit: ConcentrationUnit.MG_ML,
+					stockConcentrationUnit: ConcentrationUnit.MILLIMOLAR,
 					finalConcentration: 100,
-					finalConcentrationUnit: ConcentrationUnit.UG_ML,
+					finalConcentrationUnit: ConcentrationUnit.MICROMOLAR,
 					finalVolume: 1,
 					volumeUnit: VolumeUnit.MILLILITER,
 					notes: 'タンパク質定量用標準溶液'
@@ -342,6 +343,91 @@ export class TemplateDatabase {
 				references: ['Molecular Cloning Manual'],
 				createdAt: new Date(),
 				isBuiltIn: true
+			},
+
+			// Serial Dilution Templates
+			{
+				id: 'serial-dilution-ligand-standard',
+				name: 'リガンド段階希釈（標準）',
+				description: '細胞培養実験で一般的なリガンド濃度範囲の段階希釈プロトコル',
+				category: TemplateCategory.CELL_CULTURE,
+				type: 'serial-dilution',
+				template: {
+					name: 'リガンド段階希釈',
+					stockConcentration: 10,
+					stockUnit: ConcentrationUnit.MILLIMOLAR,
+					cellVolume: 200,
+					cellVolumeUnit: VolumeUnit.MICROLITER,
+					additionVolume: 2,
+					additionVolumeUnit: VolumeUnit.MICROLITER,
+					dilutionVolume: 200,
+					dilutionVolumeUnit: VolumeUnit.MICROLITER,
+					targetConcentrations: [100, 10, 1, 0.1],
+					targetUnit: ConcentrationUnit.MICROMOLAR
+				} as SerialDilutionData,
+				tags: ['リガンド', '細胞培養', '段階希釈', 'µM'],
+				difficulty: 'beginner',
+				estimatedTime: '15分',
+				author: 'Buffer Calc Team',
+				references: ['Cell Culture Protocols'],
+				createdAt: new Date(),
+				isBuiltIn: true
+			},
+
+			{
+				id: 'serial-dilution-drug-screening',
+				name: '薬物スクリーニング段階希釈',
+				description: '薬物スクリーニング実験向けの広範囲濃度段階希釈プロトコル',
+				category: TemplateCategory.CELL_CULTURE,
+				type: 'serial-dilution',
+				template: {
+					name: '薬物スクリーニング希釈',
+					stockConcentration: 100,
+					stockUnit: ConcentrationUnit.MILLIMOLAR,
+					cellVolume: 100,
+					cellVolumeUnit: VolumeUnit.MICROLITER,
+					additionVolume: 1,
+					additionVolumeUnit: VolumeUnit.MICROLITER,
+					dilutionVolume: 100,
+					dilutionVolumeUnit: VolumeUnit.MICROLITER,
+					targetConcentrations: [1000, 100, 10, 1, 0.1, 0.01],
+					targetUnit: ConcentrationUnit.MICROMOLAR
+				} as SerialDilutionData,
+				tags: ['薬物', 'スクリーニング', '段階希釈', '広範囲'],
+				difficulty: 'intermediate',
+				estimatedTime: '20分',
+				author: 'Buffer Calc Team',
+				references: ['Drug Discovery Protocols'],
+				createdAt: new Date(),
+				isBuiltIn: true
+			},
+
+			{
+				id: 'serial-dilution-protein-titration',
+				name: 'タンパク質濃度滴定',
+				description: 'タンパク質アッセイ用の濃度滴定段階希釈プロトコル',
+				category: TemplateCategory.PROTEIN_BUFFERS,
+				type: 'serial-dilution',
+				template: {
+					name: 'タンパク質濃度滴定',
+					stockConcentration: 10,
+					stockUnit: ConcentrationUnit.MILLIMOLAR,
+					cellVolume: 96,
+					cellVolumeUnit: VolumeUnit.MICROLITER,
+					additionVolume: 4,
+					additionVolumeUnit: VolumeUnit.MICROLITER,
+					dilutionVolume: 200,
+					dilutionVolumeUnit: VolumeUnit.MICROLITER,
+					targetConcentrations: [1, 0.5, 0.25, 0.125, 0.0625],
+					targetUnit: ConcentrationUnit.MILLIMOLAR
+				} as SerialDilutionData,
+				tags: ['タンパク質', 'アッセイ', '滴定', 'µg/mL'],
+				difficulty: 'intermediate',
+				estimatedTime: '12分',
+				author: 'Buffer Calc Team',
+				references: ['Protein Assay Protocols'],
+				createdAt: new Date(),
+				isBuiltIn: true
 			}
 		];
 	}
@@ -354,7 +440,7 @@ export class TemplateDatabase {
 		return this.builtInTemplates.filter(template => template.category === category);
 	}
 
-	getTemplatesByType(type: 'buffer' | 'stock' | 'dilution'): RecipeTemplate[] {
+	getTemplatesByType(type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution'): RecipeTemplate[] {
 		return this.builtInTemplates.filter(template => template.type === type);
 	}
 

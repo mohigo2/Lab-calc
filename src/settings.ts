@@ -132,12 +132,7 @@ export class BufferCalcSettingTab extends PluginSettingTab {
 					[ConcentrationUnit.MOLAR]: 'Molar (M)',
 					[ConcentrationUnit.MILLIMOLAR]: 'Millimolar (mM)',
 					[ConcentrationUnit.MICROMOLAR]: 'Micromolar (µM)',
-					[ConcentrationUnit.NANOMOLAR]: 'Nanomolar (nM)',
-					[ConcentrationUnit.PERCENT_W_V]: 'Percent (w/v)',
-					[ConcentrationUnit.PERCENT_W_W]: 'Percent (w/w)',
-					[ConcentrationUnit.PERCENT_V_V]: 'Percent (v/v)',
-					[ConcentrationUnit.MG_ML]: 'mg/mL',
-					[ConcentrationUnit.UG_ML]: 'µg/mL'
+					[ConcentrationUnit.NANOMOLAR]: 'Nanomolar (nM)'
 				};
 
 				for (const [key, value] of Object.entries(options)) {

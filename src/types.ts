@@ -135,14 +135,7 @@ export enum ConcentrationUnit {
 	MOLAR = 'M',
 	MILLIMOLAR = 'mM',
 	MICROMOLAR = 'µM',
-	NANOMOLAR = 'nM',
-	PERCENT_W_V = '%(w/v)',
-	PERCENT_W_W = '%(w/w)',
-	PERCENT_V_V = '%(v/v)',
-	MG_ML = 'mg/mL',
-	UG_ML = 'µg/mL',
-	PPM = 'ppm',
-	PPB = 'ppb'
+	NANOMOLAR = 'nM'
 }
 
 export enum MassUnit {
@@ -176,7 +169,7 @@ export enum ErrorType {
 }
 
 export interface BufferCalcBlockContent {
-	type: 'buffer' | 'stock' | 'dilution';
+	type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution';
 	data: BufferCalcData;
 	options?: BlockOptions;
 }
@@ -190,7 +183,7 @@ export interface BlockOptions {
 	template?: string;
 }
 
-export type BufferCalcData = BufferData | StockData | DilutionData;
+export type BufferCalcData = BufferData | StockData | DilutionData | SerialDilutionData;
 
 export interface BufferData {
 	name?: string;
@@ -251,7 +244,7 @@ export interface ImportResult {
 export interface CalculationHistoryEntry {
 	id: string;
 	timestamp: Date;
-	type: 'buffer' | 'stock' | 'dilution';
+	type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution';
 	name: string;
 	inputData: BufferCalcData;
 	result: CalculationResult;
@@ -261,7 +254,7 @@ export interface CalculationHistoryEntry {
 }
 
 export interface HistoryFilter {
-	type?: 'buffer' | 'stock' | 'dilution' | 'all';
+	type?: 'buffer' | 'stock' | 'dilution' | 'serial-dilution' | 'all';
 	dateRange?: {
 		start: Date;
 		end: Date;
@@ -276,6 +269,7 @@ export interface HistoryStats {
 	bufferCalculations: number;
 	stockCalculations: number;
 	dilutionCalculations: number;
+	serialDilutionCalculations: number;
 	averageCalculationsPerDay: number;
 	mostUsedReagents: { name: string; count: number }[];
 	recentActivity: { date: string; count: number }[];
@@ -334,14 +328,7 @@ export const CONCENTRATION_CONVERSION_FACTORS: Record<ConcentrationUnit, number>
 	[ConcentrationUnit.MOLAR]: 1,
 	[ConcentrationUnit.MILLIMOLAR]: 1000,
 	[ConcentrationUnit.MICROMOLAR]: 1000000,
-	[ConcentrationUnit.NANOMOLAR]: 1000000000,
-	[ConcentrationUnit.PERCENT_W_V]: 1,
-	[ConcentrationUnit.PERCENT_W_W]: 1,
-	[ConcentrationUnit.PERCENT_V_V]: 1,
-	[ConcentrationUnit.MG_ML]: 1,
-	[ConcentrationUnit.UG_ML]: 1000,
-	[ConcentrationUnit.PPM]: 1000000,
-	[ConcentrationUnit.PPB]: 1000000000
+	[ConcentrationUnit.NANOMOLAR]: 1000000000
 };
 
 // Stock solution data interface
@@ -378,7 +365,7 @@ export interface RecipeTemplate {
 	name: string;
 	description: string;
 	category: TemplateCategory;
-	type: 'buffer' | 'stock' | 'dilution';
+	type: 'buffer' | 'stock' | 'dilution' | 'serial-dilution';
 	template: BufferCalcData;
 	tags: string[];
 	difficulty: 'beginner' | 'intermediate' | 'advanced';
@@ -396,4 +383,77 @@ export enum TemplateCategory {
 	CELL_CULTURE = 'cell_culture',
 	ANALYTICAL = 'analytical',
 	CUSTOM = 'custom'
+}
+
+// Serial Dilution Types
+export enum StepDisplayFormat {
+	TEXT = 'text',
+	TABLE = 'table'
+}
+
+export interface SerialDilutionData {
+	name?: string;
+	stockConcentration: number;
+	stockUnit: ConcentrationUnit;
+	cellVolume: number;
+	cellVolumeUnit: VolumeUnit;
+	additionVolume: number;
+	additionVolumeUnit: VolumeUnit;
+	dilutionVolume: number;
+	dilutionVolumeUnit: VolumeUnit;
+	targetConcentrations: number[];
+	targetUnit: ConcentrationUnit;
+	stepDisplayFormat?: StepDisplayFormat;
+	notes?: string;
+}
+
+export interface SerialDilutionStep {
+	stepNumber: number;
+	name: string;
+	fromConcentration: number;
+	toConcentration: number;
+	concentrationUnit: ConcentrationUnit;
+	stockVolume: number;
+	solventVolume: number;
+	totalVolume: number;
+	volumeUnit: VolumeUnit;
+	dilutionFactor: number;
+	isIntermediateStep: boolean;
+	description: string;
+}
+
+export interface SerialDilutionResult {
+	steps: SerialDilutionStep[];
+	cellAdditionInstructions: CellAdditionInstruction[];
+	warnings: Warning[];
+	errors: ValidationError[];
+	protocolSummary: ProtocolSummary;
+	exportData?: ExportData;
+}
+
+export interface CellAdditionInstruction {
+	targetConcentration: number;
+	concentrationUnit: ConcentrationUnit;
+	stepToUse: number;
+	stepName: string;
+	additionVolume: number;
+	volumeUnit: VolumeUnit;
+	finalCellVolume: number;
+	description: string;
+}
+
+export interface ProtocolSummary {
+	totalSteps: number;
+	totalVolume: number;
+	volumeUnit: VolumeUnit;
+	highestDilutionFactor: number;
+	estimatedTime: string;
+	requiredTubes: number;
+}
+
+export interface ExportData {
+	dilutionTable: string[][];
+	additionTable: string[][];
+	csvFormat: string;
+	markdownFormat: string;
 }

@@ -1,4 +1,14 @@
 {
   "legacyEditor": false,
-  "livePreview": true
+  "livePreview": true,
+  "readableLineLength": true,
+  "foldHeading": true,
+  "foldIndent": true,
+  "showLineNumber": true,
+  "spellcheck": false,
+  "strictLineBreaks": false,
+  "showFrontmatter": true,
+  "defaultViewMode": "preview",
+  "attachmentFolderPath": "./attachments",
+  "promptDelete": false
 }

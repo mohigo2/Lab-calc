@@ -80,23 +80,8 @@ export class ConversionUtils {
 			throw new Error('Molecular weight is required to convert from mass-based concentrations to molarity');
 		}
 
-		switch (unit) {
-			case ConcentrationUnit.MG_ML:
-				// mg/mL to M: (concentration in mg/mL) / (MW in g/mol) / 1000 (mg to g conversion)
-				return value / (molecularWeight * 1000);
-			
-			case ConcentrationUnit.UG_ML:
-				// µg/mL to M: (concentration in µg/mL) / (MW in g/mol) / 1,000,000 (µg to g conversion)
-				return value / (molecularWeight * 1000000);
-			
-			case ConcentrationUnit.PERCENT_W_V:
-				// %(w/v) to M: (% × 10) / MW
-				// 1% w/v = 10 g/L = 10,000 mg/L
-				return (value * 10000) / (molecularWeight * 1000);
-			
-			default:
-				throw new Error(`Conversion from ${unit} to molarity not implemented`);
-		}
+		// Since we simplified to M-series only, this shouldn't be reached
+		throw new Error(`Only M-series concentration units are supported`);	
 	}
 
 	/**
@@ -173,31 +158,8 @@ export class ConversionUtils {
 			ConcentrationUnit.NANOMOLAR
 		];
 
-		const massUnits = [
-			ConcentrationUnit.MG_ML,
-			ConcentrationUnit.UG_ML
-		];
-
-		const percentUnits = [
-			ConcentrationUnit.PERCENT_W_V,
-			ConcentrationUnit.PERCENT_W_W,
-			ConcentrationUnit.PERCENT_V_V
-		];
-
-		// Can convert within same unit type
-		if (molarUnits.includes(fromUnit) && molarUnits.includes(toUnit)) return true;
-		if (massUnits.includes(fromUnit) && massUnits.includes(toUnit)) return true;
-		if (percentUnits.includes(fromUnit) && percentUnits.includes(toUnit)) return true;
-
-		// Can convert between molar and mass units (with molecular weight)
-		if (molarUnits.includes(fromUnit) && massUnits.includes(toUnit)) return true;
-		if (massUnits.includes(fromUnit) && molarUnits.includes(toUnit)) return true;
-
-		// Can convert between molar and percent w/v (with molecular weight)
-		if (molarUnits.includes(fromUnit) && fromUnit === ConcentrationUnit.PERCENT_W_V) return true;
-		if (fromUnit === ConcentrationUnit.PERCENT_W_V && molarUnits.includes(toUnit)) return true;
-
-		return false;
+		// Only allow conversion within M-series units
+		return molarUnits.includes(fromUnit) && molarUnits.includes(toUnit);
 	}
 
 	/**
@@ -211,18 +173,11 @@ export class ConversionUtils {
 			[VolumeUnit.MICROLITER]: 'Microliter',
 			[VolumeUnit.NANOLITER]: 'Nanoliter',
 			
-			// Concentration units
+			// Concentration units (M-series only)
 			[ConcentrationUnit.MOLAR]: 'Molar',
 			[ConcentrationUnit.MILLIMOLAR]: 'Millimolar',
 			[ConcentrationUnit.MICROMOLAR]: 'Micromolar',
 			[ConcentrationUnit.NANOMOLAR]: 'Nanomolar',
-			[ConcentrationUnit.PERCENT_W_V]: 'Percent (w/v)',
-			[ConcentrationUnit.PERCENT_W_W]: 'Percent (w/w)',
-			[ConcentrationUnit.PERCENT_V_V]: 'Percent (v/v)',
-			[ConcentrationUnit.MG_ML]: 'mg/mL',
-			[ConcentrationUnit.UG_ML]: 'µg/mL',
-			[ConcentrationUnit.PPM]: 'Parts per million',
-			[ConcentrationUnit.PPB]: 'Parts per billion',
 			
 			// Mass units
 			[MassUnit.GRAM]: 'Gram',

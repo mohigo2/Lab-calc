@@ -8,11 +8,14 @@ import {
 	BufferData,
 	StockData,
 	DilutionData,
+	SerialDilutionData,
+	SerialDilutionResult,
 	CalculationResult,
 	BufferCalcSettings,
 	VolumeUnit,
 	ConcentrationUnit,
-	ComponentInput
+	ComponentInput,
+	StepDisplayFormat
 } from '../types';
 
 import { CalculationEngine } from '../calculations/engine';
@@ -71,6 +74,10 @@ export class BufferCalcUI {
 				case 'dilution':
 					console.log('Rendering dilution calculator...');
 					await this.renderDilutionCalculator();
+					break;
+				case 'serial-dilution':
+					console.log('Rendering serial dilution calculator...');
+					await this.renderSerialDilutionCalculator();
 					break;
 				default:
 					this.container.createEl('div', {
@@ -341,10 +348,7 @@ export class BufferCalcUI {
 			{ value: ConcentrationUnit.MOLAR, label: 'M' },
 			{ value: ConcentrationUnit.MILLIMOLAR, label: 'mM' },
 			{ value: ConcentrationUnit.MICROMOLAR, label: 'µM' },
-			{ value: ConcentrationUnit.NANOMOLAR, label: 'nM' },
-			{ value: ConcentrationUnit.PERCENT_W_V, label: '% (w/v)' },
-			{ value: ConcentrationUnit.MG_ML, label: 'mg/mL' },
-			{ value: ConcentrationUnit.UG_ML, label: 'µg/mL' }
+			{ value: ConcentrationUnit.NANOMOLAR, label: 'nM' }
 		];
 
 		units.forEach(unit => {
@@ -1323,4 +1327,414 @@ export class BufferCalcUI {
 			}
 		});
 	}
+
+	private async renderSerialDilutionCalculator(): Promise<void> {
+		const data = this.blockContent.data as SerialDilutionData;
+		
+		// Header
+		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
+		this.createSerialDilutionEditableTitle(header, data);
+
+		// Controls container
+		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
+
+		// Stock solution section
+		const stockSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
+		stockSection.createEl('h3', { text: 'ストック溶液', cls: 'buffer-calc-section-title' });
+		
+		const stockRow = stockSection.createEl('div', { cls: 'buffer-calc-input-row' });
+		stockRow.createEl('label', { text: '濃度:', cls: 'buffer-calc-label' });
+		
+		const stockConcInput = stockRow.createEl('input', {
+			type: 'number',
+			value: data.stockConcentration?.toString() || '',
+			cls: 'buffer-calc-input'
+		}) as HTMLInputElement;
+		
+		const stockUnitSelect = stockRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		this.populateConcentrationUnits(stockUnitSelect, data.stockUnit);
+
+		// Cell culture parameters section
+		const cellSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
+		cellSection.createEl('h3', { text: '細胞培養パラメータ', cls: 'buffer-calc-section-title' });
+		
+		// Cell volume
+		const cellVolumeRow = cellSection.createEl('div', { cls: 'buffer-calc-input-row' });
+		cellVolumeRow.createEl('label', { text: '細胞溶液の量:', cls: 'buffer-calc-label' });
+		
+		const cellVolumeInput = cellVolumeRow.createEl('input', {
+			type: 'number',
+			value: data.cellVolume?.toString() || '',
+			cls: 'buffer-calc-input'
+		}) as HTMLInputElement;
+		
+		const cellVolumeUnitSelect = cellVolumeRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		this.populateVolumeUnits(cellVolumeUnitSelect, data.cellVolumeUnit);
+
+		// Addition volume
+		const additionVolumeRow = cellSection.createEl('div', { cls: 'buffer-calc-input-row' });
+		additionVolumeRow.createEl('label', { text: '細胞への添加量:', cls: 'buffer-calc-label' });
+		
+		const additionVolumeInput = additionVolumeRow.createEl('input', {
+			type: 'number',
+			value: data.additionVolume?.toString() || '',
+			cls: 'buffer-calc-input'
+		}) as HTMLInputElement;
+		
+		const additionVolumeUnitSelect = additionVolumeRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		this.populateVolumeUnits(additionVolumeUnitSelect, data.additionVolumeUnit);
+
+		// Dilution parameters section
+		const dilutionSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
+		dilutionSection.createEl('h3', { text: '希釈パラメータ', cls: 'buffer-calc-section-title' });
+		
+		// Dilution volume
+		const dilutionVolumeRow = dilutionSection.createEl('div', { cls: 'buffer-calc-input-row' });
+		dilutionVolumeRow.createEl('label', { text: '各希釈段階での作成量:', cls: 'buffer-calc-label' });
+		
+		const dilutionVolumeInput = dilutionVolumeRow.createEl('input', {
+			type: 'number',
+			value: data.dilutionVolume?.toString() || '',
+			cls: 'buffer-calc-input'
+		}) as HTMLInputElement;
+		
+		const dilutionVolumeUnitSelect = dilutionVolumeRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		this.populateVolumeUnits(dilutionVolumeUnitSelect, data.dilutionVolumeUnit);
+
+		// Target concentrations section
+		const targetSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
+		const targetHeader = targetSection.createEl('div', { cls: 'buffer-calc-section-header' });
+		targetHeader.createEl('h3', { text: '最終目標濃度', cls: 'buffer-calc-section-title' });
+		
+
+		// Target concentrations container
+		const targetConcentrationsContainer = targetSection.createEl('div', { cls: 'serial-dilution-targets-container' });
+		
+		// Target unit selector
+		const targetUnitRow = targetSection.createEl('div', { cls: 'buffer-calc-input-row' });
+		targetUnitRow.createEl('label', { text: '濃度単位:', cls: 'buffer-calc-label' });
+		
+		const targetUnitSelect = targetUnitRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		this.populateConcentrationUnits(targetUnitSelect, data.targetUnit);
+
+		// Add concentration button
+		const addConcentrationBtn = targetSection.createEl('button', {
+			text: '+ 最後に追加',
+			cls: 'buffer-calc-button buffer-calc-button-secondary'
+		});
+
+		// Render target concentrations
+		this.renderTargetConcentrations(targetConcentrationsContainer, data);
+
+		// Display format section
+		const displaySection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
+		displaySection.createEl('h3', { text: '表示形式', cls: 'buffer-calc-section-title' });
+		
+		const displayFormatRow = displaySection.createEl('div', { cls: 'buffer-calc-input-row' });
+		displayFormatRow.createEl('label', { text: '手順表示:', cls: 'buffer-calc-label' });
+		
+		const displayFormatSelect = displayFormatRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		displayFormatSelect.createEl('option', { value: StepDisplayFormat.TEXT, text: '文字形式' });
+		displayFormatSelect.createEl('option', { value: StepDisplayFormat.TABLE, text: '表形式' });
+		displayFormatSelect.value = data.stepDisplayFormat || StepDisplayFormat.TEXT;
+
+		// Results container
+		const resultsContainer = this.container.createEl('div', { cls: 'buffer-calc-results' });
+
+		// Event listeners
+		const recalculate = () => {
+			try {
+				// Update data object
+				data.stockConcentration = parseFloat(stockConcInput.value) || 0;
+				data.stockUnit = stockUnitSelect.value as ConcentrationUnit;
+				data.cellVolume = parseFloat(cellVolumeInput.value) || 0;
+				data.cellVolumeUnit = cellVolumeUnitSelect.value as VolumeUnit;
+				data.additionVolume = parseFloat(additionVolumeInput.value) || 0;
+				data.additionVolumeUnit = additionVolumeUnitSelect.value as VolumeUnit;
+				data.dilutionVolume = parseFloat(dilutionVolumeInput.value) || 0;
+				data.dilutionVolumeUnit = dilutionVolumeUnitSelect.value as VolumeUnit;
+				data.targetUnit = targetUnitSelect.value as ConcentrationUnit;
+				data.stepDisplayFormat = displayFormatSelect.value as StepDisplayFormat;
+
+				// Calculate results
+				const result = this.calculationEngine.calculateSerialDilution(data);
+				this.renderSerialDilutionResults(resultsContainer, result, data);
+			} catch (error) {
+				console.error('Serial dilution calculation error:', error);
+				resultsContainer.innerHTML = `<div class="buffer-calc-error">計算エラー: ${error.message}</div>`;
+			}
+		};
+
+		// Add event listeners
+		[stockConcInput, stockUnitSelect, cellVolumeInput, cellVolumeUnitSelect,
+		 additionVolumeInput, additionVolumeUnitSelect, dilutionVolumeInput, 
+		 dilutionVolumeUnitSelect, targetUnitSelect, displayFormatSelect].forEach(element => {
+			element.addEventListener('input', recalculate);
+			element.addEventListener('change', recalculate);
+		});
+
+
+		addConcentrationBtn.addEventListener('click', () => {
+			data.targetConcentrations = data.targetConcentrations || [];
+			data.targetConcentrations.push(1);
+			this.renderTargetConcentrations(targetConcentrationsContainer, data);
+			recalculate();
+		});
+
+		// Initial calculation
+		recalculate();
+	}
+
+	private renderTargetConcentrations(container: HTMLElement, data: SerialDilutionData): void {
+		container.empty();
+		
+		if (!data.targetConcentrations || data.targetConcentrations.length === 0) {
+			data.targetConcentrations = [100, 10, 1, 0.1];
+		}
+
+		data.targetConcentrations.forEach((concentration, index) => {
+			const concentrationRow = container.createEl('div', { cls: 'buffer-calc-input-row serial-dilution-target-row' });
+			
+			const concentrationInput = concentrationRow.createEl('input', {
+				type: 'number',
+				value: concentration.toString(),
+				cls: 'buffer-calc-input'
+			}) as HTMLInputElement;
+
+			// Button container for better layout
+			const buttonContainer = concentrationRow.createEl('div', { cls: 'serial-dilution-target-buttons' });
+
+			const insertAboveBtn = buttonContainer.createEl('button', {
+				text: '↑',
+				cls: 'buffer-calc-button buffer-calc-button-small serial-dilution-insert-btn',
+				attr: { title: '上に追加' }
+			});
+
+			const insertBelowBtn = buttonContainer.createEl('button', {
+				text: '↓',
+				cls: 'buffer-calc-button buffer-calc-button-small serial-dilution-insert-btn',
+				attr: { title: '下に追加' }
+			});
+
+			const removeBtn = buttonContainer.createEl('button', {
+				text: '×',
+				cls: 'buffer-calc-button buffer-calc-button-danger buffer-calc-button-small serial-dilution-remove-btn',
+				attr: { title: '削除' }
+			});
+
+			// Event listeners
+			concentrationInput.addEventListener('input', () => {
+				data.targetConcentrations[index] = parseFloat(concentrationInput.value) || 0;
+				// Trigger recalculation through parent
+				concentrationInput.dispatchEvent(new Event('change', { bubbles: true }));
+			});
+
+			insertAboveBtn.addEventListener('click', () => {
+				this.insertConcentrationAt(data, index, 'before');
+				this.renderTargetConcentrations(container, data);
+				// Trigger recalculation
+				insertAboveBtn.dispatchEvent(new Event('change', { bubbles: true }));
+			});
+
+			insertBelowBtn.addEventListener('click', () => {
+				this.insertConcentrationAt(data, index, 'after');
+				this.renderTargetConcentrations(container, data);
+				// Trigger recalculation
+				insertBelowBtn.dispatchEvent(new Event('change', { bubbles: true }));
+			});
+
+			removeBtn.addEventListener('click', () => {
+				data.targetConcentrations.splice(index, 1);
+				this.renderTargetConcentrations(container, data);
+				// Trigger recalculation
+				container.dispatchEvent(new Event('change', { bubbles: true }));
+			});
+
+			// Don't allow removing if only one concentration
+			if (data.targetConcentrations.length === 1) {
+				removeBtn.style.visibility = 'hidden';
+			}
+		});
+	}
+
+	private insertConcentrationAt(data: SerialDilutionData, index: number, position: 'before' | 'after'): void {
+		const newConcentration = 1.0; // Default value
+		const insertIndex = position === 'before' ? index : index + 1;
+		data.targetConcentrations.splice(insertIndex, 0, newConcentration);
+	}
+
+	private renderSerialDilutionResults(container: HTMLElement, result: SerialDilutionResult, data: SerialDilutionData): void {
+		container.empty();
+
+		if (result.errors.length > 0) {
+			const errorContainer = container.createEl('div', { cls: 'buffer-calc-errors' });
+			errorContainer.createEl('h3', { text: 'エラー' });
+			result.errors.forEach(error => {
+				errorContainer.createEl('div', { 
+					text: error.message, 
+					cls: 'buffer-calc-error-item' 
+				});
+			});
+			return;
+		}
+
+		// Protocol summary
+		const summaryContainer = container.createEl('div', { cls: 'serial-dilution-summary' });
+		summaryContainer.createEl('h3', { text: 'プロトコル概要' });
+		
+		const summaryList = summaryContainer.createEl('ul');
+		summaryList.createEl('li', { text: `総ステップ数: ${result.protocolSummary.totalSteps}` });
+		summaryList.createEl('li', { text: `必要チューブ数: ${result.protocolSummary.requiredTubes}` });
+		summaryList.createEl('li', { text: `推定時間: ${result.protocolSummary.estimatedTime}` });
+		summaryList.createEl('li', { text: `最大希釈倍率: ${result.protocolSummary.highestDilutionFactor.toFixed(0)}倍` });
+
+		// Dilution steps (format depends on user choice)
+		const stepsContainer = container.createEl('div', { cls: 'serial-dilution-steps' });
+		stepsContainer.createEl('h3', { text: '段階希釈の手順' });
+		
+		const displayFormat = data.stepDisplayFormat || StepDisplayFormat.TEXT;
+		
+		if (displayFormat === StepDisplayFormat.TABLE) {
+			// Table format
+			const stepsTable = stepsContainer.createEl('table', { cls: 'serial-dilution-table' });
+			const headerRow = stepsTable.createEl('tr');
+			headerRow.createEl('th', { text: 'ステップ' });
+			headerRow.createEl('th', { text: '元濃度' });
+			headerRow.createEl('th', { text: '目標濃度' });
+			headerRow.createEl('th', { text: 'Stock量' });
+			headerRow.createEl('th', { text: '溶媒量' });
+			headerRow.createEl('th', { text: '希釈倍率' });
+			
+			result.steps.forEach(step => {
+				const row = stepsTable.createEl('tr');
+				row.createEl('td', { text: step.name });
+				row.createEl('td', { text: `${step.fromConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}` });
+				row.createEl('td', { text: `${step.toConcentration.toFixed(this.settings.decimalPlaces)} ${step.concentrationUnit}` });
+				row.createEl('td', { text: `${step.stockVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}` });
+				row.createEl('td', { text: `${step.solventVolume.toFixed(this.settings.decimalPlaces)} ${step.volumeUnit}` });
+				row.createEl('td', { text: `${step.dilutionFactor.toFixed(1)}倍` });
+			});
+		} else {
+			// Text format (numbered list)
+			const stepsList = stepsContainer.createEl('ol');
+			result.steps.forEach(step => {
+				stepsList.createEl('li', { text: step.description });
+			});
+		}
+
+		// Warnings
+		if (result.warnings.length > 0) {
+			const warningsContainer = container.createEl('div', { cls: 'buffer-calc-warnings' });
+			warningsContainer.createEl('h3', { text: '警告' });
+			result.warnings.forEach(warning => {
+				const warningEl = warningsContainer.createEl('div', { 
+					text: warning.message,
+					cls: `buffer-calc-warning-item buffer-calc-warning-${warning.severity}`
+				});
+			});
+		}
+
+		// Export buttons
+		if (result.exportData) {
+			const exportContainer = container.createEl('div', { cls: 'serial-dilution-export' });
+			exportContainer.createEl('h3', { text: 'エクスポート' });
+			
+			const exportButtons = exportContainer.createEl('div', { cls: 'buffer-calc-export-buttons' });
+			
+			const csvBtn = exportButtons.createEl('button', {
+				text: 'CSV形式でコピー',
+				cls: 'buffer-calc-button buffer-calc-button-secondary'
+			});
+			
+			const markdownBtn = exportButtons.createEl('button', {
+				text: 'Markdown形式でコピー',
+				cls: 'buffer-calc-button buffer-calc-button-secondary'
+			});
+
+			csvBtn.addEventListener('click', () => {
+				navigator.clipboard.writeText(result.exportData!.csvFormat);
+				new Notice('CSV形式でクリップボードにコピーしました');
+			});
+
+			markdownBtn.addEventListener('click', () => {
+				navigator.clipboard.writeText(result.exportData!.markdownFormat);
+				new Notice('Markdown形式でクリップボードにコピーしました');
+			});
+		}
+	}
+
+	private createSerialDilutionEditableTitle(container: HTMLElement, data: SerialDilutionData): void {
+		const titleContainer = container.createEl('div', { cls: 'buffer-calc-title-container' });
+		
+		const titleDisplay = titleContainer.createEl('span', {
+			text: data.name || 'Serial Dilution Protocol',
+			cls: 'buffer-calc-title'
+		});
+		
+		const editButton = titleContainer.createEl('button', {
+			text: '✏️',
+			cls: 'buffer-calc-edit-button',
+			attr: { title: 'タイトルを編集' }
+		});
+
+		const titleInput = titleContainer.createEl('input', {
+			type: 'text',
+			value: data.name || 'Serial Dilution Protocol',
+			cls: 'buffer-calc-title-input'
+		}) as HTMLInputElement;
+		titleInput.style.display = 'none';
+
+		let isEditing = false;
+
+		const enterEditMode = () => {
+			if (isEditing) return;
+			isEditing = true;
+			
+			titleDisplay.style.display = 'none';
+			editButton.style.display = 'none';
+			titleInput.style.display = 'inline-block';
+			titleInput.focus();
+			titleInput.select();
+		};
+
+		const exitEditMode = (save: boolean = false) => {
+			if (!isEditing) return;
+			isEditing = false;
+
+			if (save) {
+				const newName = titleInput.value.trim();
+				data.name = newName || undefined;
+				titleDisplay.textContent = newName || 'Serial Dilution Protocol';
+			}
+
+			titleDisplay.style.display = 'inline-block';
+			editButton.style.display = 'inline-block';
+			titleInput.style.display = 'none';
+		};
+
+		// Event listeners
+		editButton.addEventListener('click', enterEditMode);
+		titleDisplay.addEventListener('click', enterEditMode);
+
+		titleInput.addEventListener('blur', () => exitEditMode(true));
+		titleInput.addEventListener('keydown', (e) => {
+			if (e.key === 'Enter') {
+				e.preventDefault();
+				exitEditMode(true);
+			} else if (e.key === 'Escape') {
+				e.preventDefault();
+				exitEditMode(false);
+			}
+		});
+	}
+
+	private formatConcentrationDisplay(
+		concentration: number, 
+		unit: ConcentrationUnit
+	): string {
+		return `${concentration.toFixed(this.settings.decimalPlaces)} ${unit}`;
+	}
+
+
+
 }
