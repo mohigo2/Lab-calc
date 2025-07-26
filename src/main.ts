@@ -17,7 +17,8 @@ import {
 	CalculationResult,
 	DEFAULT_SETTINGS,
 	Reagent,
-	StepDisplayFormat
+	StepDisplayFormat,
+	ConcentrationInputMode
 } from './types';
 
 import { BufferCalcSettingTab } from './settings';
@@ -375,6 +376,7 @@ export default class BufferCalcPlugin extends Plugin {
 				dilutionVolumeUnit: this.settings.defaultVolumeUnit,
 				targetConcentrations: [100, 10, 1, 0.1],
 				targetUnit: this.settings.defaultConcentrationUnit,
+				targetInputMode: ConcentrationInputMode.EXPONENTIAL,
 				stepDisplayFormat: StepDisplayFormat.TEXT
 			};
 		} else {

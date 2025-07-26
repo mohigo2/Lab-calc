@@ -15,7 +15,8 @@ import {
 	VolumeUnit,
 	ConcentrationUnit,
 	ComponentInput,
-	StepDisplayFormat
+	StepDisplayFormat,
+	ConcentrationInputMode
 } from '../types';
 
 import { CalculationEngine } from '../calculations/engine';
@@ -1340,10 +1341,9 @@ export class BufferCalcUI {
 
 		// Stock solution section
 		const stockSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
-		stockSection.createEl('h3', { text: 'ストック溶液', cls: 'buffer-calc-section-title' });
 		
 		const stockRow = stockSection.createEl('div', { cls: 'buffer-calc-input-row' });
-		stockRow.createEl('label', { text: '濃度:', cls: 'buffer-calc-label' });
+		stockRow.createEl('label', { text: 'ストック濃度:', cls: 'buffer-calc-label' });
 		
 		const stockConcInput = stockRow.createEl('input', {
 			type: 'number',
@@ -1355,8 +1355,7 @@ export class BufferCalcUI {
 		this.populateConcentrationUnits(stockUnitSelect, data.stockUnit);
 
 		// Cell culture parameters section
-		const cellSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
-		cellSection.createEl('h3', { text: '細胞培養パラメータ', cls: 'buffer-calc-section-title' });
+		const cellSection = controls.createEl('div', { cls: 'buffer-calc-section' });
 		
 		// Cell volume
 		const cellVolumeRow = cellSection.createEl('div', { cls: 'buffer-calc-input-row' });
@@ -1386,7 +1385,6 @@ export class BufferCalcUI {
 
 		// Dilution parameters section
 		const dilutionSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
-		dilutionSection.createEl('h3', { text: '希釈パラメータ', cls: 'buffer-calc-section-title' });
 		
 		// Dilution volume
 		const dilutionVolumeRow = dilutionSection.createEl('div', { cls: 'buffer-calc-input-row' });
@@ -1402,16 +1400,30 @@ export class BufferCalcUI {
 		this.populateVolumeUnits(dilutionVolumeUnitSelect, data.dilutionVolumeUnit);
 
 		// Target concentrations section
-		const targetSection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
-		const targetHeader = targetSection.createEl('div', { cls: 'buffer-calc-section-header' });
-		targetHeader.createEl('h3', { text: '最終目標濃度', cls: 'buffer-calc-section-title' });
+		const targetSection = controls.createEl('div', { cls: 'buffer-calc-section' });
+		targetSection.createEl('div', { 
+			text: '最終目標濃度',
+			cls: 'buffer-calc-label-text'
+		});
 		
 
 		// Target concentrations container
 		const targetConcentrationsContainer = targetSection.createEl('div', { cls: 'serial-dilution-targets-container' });
 		
-		// Target unit selector
-		const targetUnitRow = targetSection.createEl('div', { cls: 'buffer-calc-input-row' });
+		// Target settings container for better layout
+		const targetSettingsContainer = targetSection.createEl('div', { cls: 'serial-dilution-target-settings' });
+		
+		// Target input mode selector
+		const inputModeRow = targetSettingsContainer.createEl('div', { cls: 'buffer-calc-input-row' });
+		inputModeRow.createEl('label', { text: '入力形式:', cls: 'buffer-calc-label' });
+		
+		const inputModeSelect = inputModeRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
+		inputModeSelect.createEl('option', { value: ConcentrationInputMode.STANDARD, text: '標準形式' });
+		inputModeSelect.createEl('option', { value: ConcentrationInputMode.EXPONENTIAL, text: '指数形式' });
+		inputModeSelect.value = data.targetInputMode || ConcentrationInputMode.EXPONENTIAL;
+
+		// Target unit selector (only for standard mode)
+		const targetUnitRow = targetSettingsContainer.createEl('div', { cls: 'buffer-calc-input-row' });
 		targetUnitRow.createEl('label', { text: '濃度単位:', cls: 'buffer-calc-label' });
 		
 		const targetUnitSelect = targetUnitRow.createEl('select', { cls: 'buffer-calc-select' }) as HTMLSelectElement;
@@ -1423,12 +1435,8 @@ export class BufferCalcUI {
 			cls: 'buffer-calc-button buffer-calc-button-secondary'
 		});
 
-		// Render target concentrations
-		this.renderTargetConcentrations(targetConcentrationsContainer, data);
-
 		// Display format section
 		const displaySection = controls.createEl('div', { cls: 'buffer-calc-input-group' });
-		displaySection.createEl('h3', { text: '表示形式', cls: 'buffer-calc-section-title' });
 		
 		const displayFormatRow = displaySection.createEl('div', { cls: 'buffer-calc-input-row' });
 		displayFormatRow.createEl('label', { text: '手順表示:', cls: 'buffer-calc-label' });
@@ -1440,6 +1448,18 @@ export class BufferCalcUI {
 
 		// Results container
 		const resultsContainer = this.container.createEl('div', { cls: 'buffer-calc-results' });
+
+		// Toggle unit selector visibility based on input mode
+		const toggleUnitSelector = () => {
+			const isExponential = inputModeSelect.value === ConcentrationInputMode.EXPONENTIAL;
+			targetUnitRow.style.display = isExponential ? 'none' : 'flex';
+		};
+
+		// Initialize data.targetInputMode with current selection
+		data.targetInputMode = inputModeSelect.value as ConcentrationInputMode;
+		
+		// Initial toggle
+		toggleUnitSelector();
 
 		// Event listeners
 		const recalculate = () => {
@@ -1454,6 +1474,7 @@ export class BufferCalcUI {
 				data.dilutionVolume = parseFloat(dilutionVolumeInput.value) || 0;
 				data.dilutionVolumeUnit = dilutionVolumeUnitSelect.value as VolumeUnit;
 				data.targetUnit = targetUnitSelect.value as ConcentrationUnit;
+				data.targetInputMode = inputModeSelect.value as ConcentrationInputMode;
 				data.stepDisplayFormat = displayFormatSelect.value as StepDisplayFormat;
 
 				// Calculate results
@@ -1473,15 +1494,24 @@ export class BufferCalcUI {
 			element.addEventListener('change', recalculate);
 		});
 
-
-		addConcentrationBtn.addEventListener('click', () => {
-			data.targetConcentrations = data.targetConcentrations || [];
-			data.targetConcentrations.push(1);
+		inputModeSelect.addEventListener('change', () => {
+			data.targetInputMode = inputModeSelect.value as ConcentrationInputMode;
+			toggleUnitSelector();
 			this.renderTargetConcentrations(targetConcentrationsContainer, data);
 			recalculate();
 		});
 
-		// Initial calculation
+
+		addConcentrationBtn.addEventListener('click', () => {
+			data.targetConcentrations = data.targetConcentrations || [];
+			data.targetConcentrations.push(1);
+			data.targetInputMode = inputModeSelect.value as ConcentrationInputMode;
+			this.renderTargetConcentrations(targetConcentrationsContainer, data);
+			recalculate();
+		});
+
+		// Initial rendering and calculation
+		this.renderTargetConcentrations(targetConcentrationsContainer, data);
 		recalculate();
 	}
 
@@ -1495,11 +1525,37 @@ export class BufferCalcUI {
 		data.targetConcentrations.forEach((concentration, index) => {
 			const concentrationRow = container.createEl('div', { cls: 'buffer-calc-input-row serial-dilution-target-row' });
 			
-			const concentrationInput = concentrationRow.createEl('input', {
-				type: 'number',
-				value: concentration.toString(),
-				cls: 'buffer-calc-input'
-			}) as HTMLInputElement;
+			const isExponentialMode = data.targetInputMode === ConcentrationInputMode.EXPONENTIAL;
+			
+			if (isExponentialMode) {
+				// Exponential input mode: show coefficient input and M unit
+				const exponentialContainer = concentrationRow.createEl('div', { cls: 'exponential-input-container' });
+				
+				exponentialContainer.createEl('span', { text: '10^', cls: 'exponential-prefix' });
+				
+				const exponentInput = exponentialContainer.createEl('input', {
+					type: 'number',
+					value: this.concentrationToExponent(concentration).toString(),
+					cls: 'buffer-calc-input exponential-input',
+					attr: { step: '0.1', placeholder: '-6' }
+				}) as HTMLInputElement;
+				
+				exponentialContainer.createEl('span', { text: ' M', cls: 'exponential-unit' });
+				
+				// Store reference for event handling
+				(concentrationRow as any).concentrationInput = exponentInput;
+			} else {
+				// Standard input mode: number input only (unit controlled globally)
+				const concentrationInput = concentrationRow.createEl('input', {
+					type: 'number',
+					value: concentration.toString(),
+					cls: 'buffer-calc-input',
+					attr: { step: '0.1' }
+				}) as HTMLInputElement;
+				
+				// Store reference for event handling
+				(concentrationRow as any).concentrationInput = concentrationInput;
+			}
 
 			// Button container for better layout
 			const buttonContainer = concentrationRow.createEl('div', { cls: 'serial-dilution-target-buttons' });
@@ -1523,14 +1579,24 @@ export class BufferCalcUI {
 			});
 
 			// Event listeners
-			concentrationInput.addEventListener('input', () => {
-				data.targetConcentrations[index] = parseFloat(concentrationInput.value) || 0;
-				// Trigger recalculation through parent
-				concentrationInput.dispatchEvent(new Event('change', { bubbles: true }));
-			});
+			const concentrationInput = (concentrationRow as any).concentrationInput;
+			if (concentrationInput) {
+				concentrationInput.addEventListener('input', () => {
+					if (isExponentialMode) {
+						// Convert exponent back to concentration in µM
+						const exponent = parseFloat(concentrationInput.value) || -6;
+						data.targetConcentrations[index] = this.exponentToConcentration(exponent);
+					} else {
+						data.targetConcentrations[index] = parseFloat(concentrationInput.value) || 0;
+					}
+					// Trigger recalculation through parent
+					concentrationInput.dispatchEvent(new Event('change', { bubbles: true }));
+				});
+			}
 
 			insertAboveBtn.addEventListener('click', () => {
 				this.insertConcentrationAt(data, index, 'before');
+				data.targetInputMode = (document.querySelector('.serial-dilution-target-settings select') as HTMLSelectElement)?.value as ConcentrationInputMode;
 				this.renderTargetConcentrations(container, data);
 				// Trigger recalculation
 				insertAboveBtn.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1538,6 +1604,7 @@ export class BufferCalcUI {
 
 			insertBelowBtn.addEventListener('click', () => {
 				this.insertConcentrationAt(data, index, 'after');
+				data.targetInputMode = (document.querySelector('.serial-dilution-target-settings select') as HTMLSelectElement)?.value as ConcentrationInputMode;
 				this.renderTargetConcentrations(container, data);
 				// Trigger recalculation
 				insertBelowBtn.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1545,6 +1612,7 @@ export class BufferCalcUI {
 
 			removeBtn.addEventListener('click', () => {
 				data.targetConcentrations.splice(index, 1);
+				data.targetInputMode = (document.querySelector('.serial-dilution-target-settings select') as HTMLSelectElement)?.value as ConcentrationInputMode;
 				this.renderTargetConcentrations(container, data);
 				// Trigger recalculation
 				container.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1578,19 +1646,10 @@ export class BufferCalcUI {
 			return;
 		}
 
-		// Protocol summary
-		const summaryContainer = container.createEl('div', { cls: 'serial-dilution-summary' });
-		summaryContainer.createEl('h3', { text: 'プロトコル概要' });
-		
-		const summaryList = summaryContainer.createEl('ul');
-		summaryList.createEl('li', { text: `総ステップ数: ${result.protocolSummary.totalSteps}` });
-		summaryList.createEl('li', { text: `必要チューブ数: ${result.protocolSummary.requiredTubes}` });
-		summaryList.createEl('li', { text: `推定時間: ${result.protocolSummary.estimatedTime}` });
-		summaryList.createEl('li', { text: `最大希釈倍率: ${result.protocolSummary.highestDilutionFactor.toFixed(0)}倍` });
+		// Protocol summary removed per user request
 
 		// Dilution steps (format depends on user choice)
 		const stepsContainer = container.createEl('div', { cls: 'serial-dilution-steps' });
-		stepsContainer.createEl('h3', { text: '段階希釈の手順' });
 		
 		const displayFormat = data.stepDisplayFormat || StepDisplayFormat.TEXT;
 		
@@ -1637,7 +1696,6 @@ export class BufferCalcUI {
 		// Export buttons
 		if (result.exportData) {
 			const exportContainer = container.createEl('div', { cls: 'serial-dilution-export' });
-			exportContainer.createEl('h3', { text: 'エクスポート' });
 			
 			const exportButtons = exportContainer.createEl('div', { cls: 'buffer-calc-export-buttons' });
 			
@@ -1735,6 +1793,21 @@ export class BufferCalcUI {
 		return `${concentration.toFixed(this.settings.decimalPlaces)} ${unit}`;
 	}
 
+	/**
+	 * Convert concentration in µM to exponent for 10^x M display
+	 */
+	private concentrationToExponent(concentrationInMicroMolar: number): number {
+		if (concentrationInMicroMolar <= 0) return -6;
+		const concentrationInMolar = concentrationInMicroMolar / 1000000; // µM to M
+		return Math.log10(concentrationInMolar);
+	}
 
+	/**
+	 * Convert exponent to concentration in µM
+	 */
+	private exponentToConcentration(exponent: number): number {
+		const concentrationInMolar = Math.pow(10, exponent);
+		return concentrationInMolar * 1000000; // M to µM
+	}
 
 }

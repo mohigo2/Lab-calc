@@ -425,6 +425,20 @@
     position: relative;
 }
 
+.buffer-calc-input-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.buffer-calc-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
 .buffer-calc-input-group label {
     font-weight: 500;
     color: var(--text-normal);
@@ -2169,6 +2183,32 @@
 	flex: 1;
 }
 
+/* Exponential Input Styles */
+.exponential-input-container {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	flex: 1;
+}
+
+.exponential-prefix {
+	font-size: 1rem;
+	font-weight: 500;
+	color: var(--text-normal);
+}
+
+.exponential-input {
+	width: 60px !important;
+	flex: none !important;
+}
+
+.exponential-unit {
+	font-size: 1rem;
+	font-weight: 500;
+	color: var(--text-normal);
+	margin-left: 0.25rem;
+}
+
 /* Responsive adjustments for target buttons */
 @media (max-width: 768px) {
 	.serial-dilution-target-buttons {
@@ -2181,5 +2221,74 @@
 		min-width: 20px;
 		height: 20px;
 		padding: 0.125rem 0.25rem;
+	}
+}
+
+/* Target Settings Layout */
+.serial-dilution-target-settings {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem;
+	margin-bottom: 1rem;
+	padding: 1rem;
+	background: var(--background-secondary);
+	border-radius: 6px;
+}
+
+
+/* Exponential Concentration Input */
+.exponential-input-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	flex: 1;
+}
+
+.exponential-input-container > div:first-child {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	justify-content: flex-start;
+}
+
+.exponential-prefix,
+.exponential-suffix {
+	font-weight: 500;
+	color: var(--text-normal);
+	font-size: 0.9rem;
+}
+
+.exponential-input {
+	width: 80px;
+	min-width: 70px;
+	text-align: center;
+}
+
+.exponential-equivalent {
+	font-size: 0.85rem;
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+	.serial-dilution-target-settings {
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+		padding: 0.75rem;
+	}
+	
+	.exponential-input-container > div:first-child {
+		justify-content: center;
+	}
+	
+	.exponential-equivalent {
+		font-size: 0.8rem;
+		text-align: center;
+	}
+	
+	.exponential-input {
+		width: 60px;
+		min-width: 50px;
 	}
 }

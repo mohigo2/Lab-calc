@@ -28,6 +28,7 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 var types_exports = {};
 __export(types_exports, {
   CONCENTRATION_CONVERSION_FACTORS: () => CONCENTRATION_CONVERSION_FACTORS,
+  ConcentrationInputMode: () => ConcentrationInputMode,
   ConcentrationUnit: () => ConcentrationUnit,
   DEFAULT_SETTINGS: () => DEFAULT_SETTINGS,
   ErrorType: () => ErrorType,
@@ -39,7 +40,7 @@ __export(types_exports, {
   VolumeUnit: () => VolumeUnit,
   WarningType: () => WarningType
 });
-var VolumeUnit, ConcentrationUnit, MassUnit, WarningType, ErrorType, DEFAULT_SETTINGS, VOLUME_CONVERSION_FACTORS, MASS_CONVERSION_FACTORS, CONCENTRATION_CONVERSION_FACTORS, TemplateCategory, StepDisplayFormat;
+var VolumeUnit, ConcentrationUnit, MassUnit, WarningType, ErrorType, DEFAULT_SETTINGS, VOLUME_CONVERSION_FACTORS, MASS_CONVERSION_FACTORS, CONCENTRATION_CONVERSION_FACTORS, TemplateCategory, StepDisplayFormat, ConcentrationInputMode;
 var init_types = __esm({
   "src/types.ts"() {
     VolumeUnit = /* @__PURE__ */ ((VolumeUnit2) => {
@@ -134,6 +135,11 @@ var init_types = __esm({
       StepDisplayFormat2["TABLE"] = "table";
       return StepDisplayFormat2;
     })(StepDisplayFormat || {});
+    ConcentrationInputMode = /* @__PURE__ */ ((ConcentrationInputMode2) => {
+      ConcentrationInputMode2["STANDARD"] = "standard";
+      ConcentrationInputMode2["EXPONENTIAL"] = "exponential";
+      return ConcentrationInputMode2;
+    })(ConcentrationInputMode || {});
   }
 });
 
@@ -5806,9 +5812,8 @@ var BufferCalcUI = class {
     this.createSerialDilutionEditableTitle(header, data);
     const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
     const stockSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
-    stockSection.createEl("h3", { text: "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2", cls: "buffer-calc-section-title" });
     const stockRow = stockSection.createEl("div", { cls: "buffer-calc-input-row" });
-    stockRow.createEl("label", { text: "\u6FC3\u5EA6:", cls: "buffer-calc-label" });
+    stockRow.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:", cls: "buffer-calc-label" });
     const stockConcInput = stockRow.createEl("input", {
       type: "number",
       value: ((_a = data.stockConcentration) == null ? void 0 : _a.toString()) || "",
@@ -5816,8 +5821,7 @@ var BufferCalcUI = class {
     });
     const stockUnitSelect = stockRow.createEl("select", { cls: "buffer-calc-select" });
     this.populateConcentrationUnits(stockUnitSelect, data.stockUnit);
-    const cellSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
-    cellSection.createEl("h3", { text: "\u7D30\u80DE\u57F9\u990A\u30D1\u30E9\u30E1\u30FC\u30BF", cls: "buffer-calc-section-title" });
+    const cellSection = controls.createEl("div", { cls: "buffer-calc-section" });
     const cellVolumeRow = cellSection.createEl("div", { cls: "buffer-calc-input-row" });
     cellVolumeRow.createEl("label", { text: "\u7D30\u80DE\u6EB6\u6DB2\u306E\u91CF:", cls: "buffer-calc-label" });
     const cellVolumeInput = cellVolumeRow.createEl("input", {
@@ -5837,7 +5841,6 @@ var BufferCalcUI = class {
     const additionVolumeUnitSelect = additionVolumeRow.createEl("select", { cls: "buffer-calc-select" });
     this.populateVolumeUnits(additionVolumeUnitSelect, data.additionVolumeUnit);
     const dilutionSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
-    dilutionSection.createEl("h3", { text: "\u5E0C\u91C8\u30D1\u30E9\u30E1\u30FC\u30BF", cls: "buffer-calc-section-title" });
     const dilutionVolumeRow = dilutionSection.createEl("div", { cls: "buffer-calc-input-row" });
     dilutionVolumeRow.createEl("label", { text: "\u5404\u5E0C\u91C8\u6BB5\u968E\u3067\u306E\u4F5C\u6210\u91CF:", cls: "buffer-calc-label" });
     const dilutionVolumeInput = dilutionVolumeRow.createEl("input", {
@@ -5847,11 +5850,20 @@ var BufferCalcUI = class {
     });
     const dilutionVolumeUnitSelect = dilutionVolumeRow.createEl("select", { cls: "buffer-calc-select" });
     this.populateVolumeUnits(dilutionVolumeUnitSelect, data.dilutionVolumeUnit);
-    const targetSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
-    const targetHeader = targetSection.createEl("div", { cls: "buffer-calc-section-header" });
-    targetHeader.createEl("h3", { text: "\u6700\u7D42\u76EE\u6A19\u6FC3\u5EA6", cls: "buffer-calc-section-title" });
+    const targetSection = controls.createEl("div", { cls: "buffer-calc-section" });
+    targetSection.createEl("div", {
+      text: "\u6700\u7D42\u76EE\u6A19\u6FC3\u5EA6",
+      cls: "buffer-calc-label-text"
+    });
     const targetConcentrationsContainer = targetSection.createEl("div", { cls: "serial-dilution-targets-container" });
-    const targetUnitRow = targetSection.createEl("div", { cls: "buffer-calc-input-row" });
+    const targetSettingsContainer = targetSection.createEl("div", { cls: "serial-dilution-target-settings" });
+    const inputModeRow = targetSettingsContainer.createEl("div", { cls: "buffer-calc-input-row" });
+    inputModeRow.createEl("label", { text: "\u5165\u529B\u5F62\u5F0F:", cls: "buffer-calc-label" });
+    const inputModeSelect = inputModeRow.createEl("select", { cls: "buffer-calc-select" });
+    inputModeSelect.createEl("option", { value: "standard" /* STANDARD */, text: "\u6A19\u6E96\u5F62\u5F0F" });
+    inputModeSelect.createEl("option", { value: "exponential" /* EXPONENTIAL */, text: "\u6307\u6570\u5F62\u5F0F" });
+    inputModeSelect.value = data.targetInputMode || "exponential" /* EXPONENTIAL */;
+    const targetUnitRow = targetSettingsContainer.createEl("div", { cls: "buffer-calc-input-row" });
     targetUnitRow.createEl("label", { text: "\u6FC3\u5EA6\u5358\u4F4D:", cls: "buffer-calc-label" });
     const targetUnitSelect = targetUnitRow.createEl("select", { cls: "buffer-calc-select" });
     this.populateConcentrationUnits(targetUnitSelect, data.targetUnit);
@@ -5859,9 +5871,7 @@ var BufferCalcUI = class {
       text: "+ \u6700\u5F8C\u306B\u8FFD\u52A0",
       cls: "buffer-calc-button buffer-calc-button-secondary"
     });
-    this.renderTargetConcentrations(targetConcentrationsContainer, data);
     const displaySection = controls.createEl("div", { cls: "buffer-calc-input-group" });
-    displaySection.createEl("h3", { text: "\u8868\u793A\u5F62\u5F0F", cls: "buffer-calc-section-title" });
     const displayFormatRow = displaySection.createEl("div", { cls: "buffer-calc-input-row" });
     displayFormatRow.createEl("label", { text: "\u624B\u9806\u8868\u793A:", cls: "buffer-calc-label" });
     const displayFormatSelect = displayFormatRow.createEl("select", { cls: "buffer-calc-select" });
@@ -5869,6 +5879,12 @@ var BufferCalcUI = class {
     displayFormatSelect.createEl("option", { value: "table" /* TABLE */, text: "\u8868\u5F62\u5F0F" });
     displayFormatSelect.value = data.stepDisplayFormat || "text" /* TEXT */;
     const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+    const toggleUnitSelector = () => {
+      const isExponential = inputModeSelect.value === "exponential" /* EXPONENTIAL */;
+      targetUnitRow.style.display = isExponential ? "none" : "flex";
+    };
+    data.targetInputMode = inputModeSelect.value;
+    toggleUnitSelector();
     const recalculate = () => {
       try {
         data.stockConcentration = parseFloat(stockConcInput.value) || 0;
@@ -5880,6 +5896,7 @@ var BufferCalcUI = class {
         data.dilutionVolume = parseFloat(dilutionVolumeInput.value) || 0;
         data.dilutionVolumeUnit = dilutionVolumeUnitSelect.value;
         data.targetUnit = targetUnitSelect.value;
+        data.targetInputMode = inputModeSelect.value;
         data.stepDisplayFormat = displayFormatSelect.value;
         const result = this.calculationEngine.calculateSerialDilution(data);
         this.renderSerialDilutionResults(resultsContainer, result, data);
@@ -5903,12 +5920,20 @@ var BufferCalcUI = class {
       element.addEventListener("input", recalculate);
       element.addEventListener("change", recalculate);
     });
-    addConcentrationBtn.addEventListener("click", () => {
-      data.targetConcentrations = data.targetConcentrations || [];
-      data.targetConcentrations.push(1);
+    inputModeSelect.addEventListener("change", () => {
+      data.targetInputMode = inputModeSelect.value;
+      toggleUnitSelector();
       this.renderTargetConcentrations(targetConcentrationsContainer, data);
       recalculate();
     });
+    addConcentrationBtn.addEventListener("click", () => {
+      data.targetConcentrations = data.targetConcentrations || [];
+      data.targetConcentrations.push(1);
+      data.targetInputMode = inputModeSelect.value;
+      this.renderTargetConcentrations(targetConcentrationsContainer, data);
+      recalculate();
+    });
+    this.renderTargetConcentrations(targetConcentrationsContainer, data);
     recalculate();
   }
   renderTargetConcentrations(container, data) {
@@ -5918,11 +5943,27 @@ var BufferCalcUI = class {
     }
     data.targetConcentrations.forEach((concentration, index) => {
       const concentrationRow = container.createEl("div", { cls: "buffer-calc-input-row serial-dilution-target-row" });
-      const concentrationInput = concentrationRow.createEl("input", {
-        type: "number",
-        value: concentration.toString(),
-        cls: "buffer-calc-input"
-      });
+      const isExponentialMode = data.targetInputMode === "exponential" /* EXPONENTIAL */;
+      if (isExponentialMode) {
+        const exponentialContainer = concentrationRow.createEl("div", { cls: "exponential-input-container" });
+        exponentialContainer.createEl("span", { text: "10^", cls: "exponential-prefix" });
+        const exponentInput = exponentialContainer.createEl("input", {
+          type: "number",
+          value: this.concentrationToExponent(concentration).toString(),
+          cls: "buffer-calc-input exponential-input",
+          attr: { step: "0.1", placeholder: "-6" }
+        });
+        exponentialContainer.createEl("span", { text: " M", cls: "exponential-unit" });
+        concentrationRow.concentrationInput = exponentInput;
+      } else {
+        const concentrationInput2 = concentrationRow.createEl("input", {
+          type: "number",
+          value: concentration.toString(),
+          cls: "buffer-calc-input",
+          attr: { step: "0.1" }
+        });
+        concentrationRow.concentrationInput = concentrationInput2;
+      }
       const buttonContainer = concentrationRow.createEl("div", { cls: "serial-dilution-target-buttons" });
       const insertAboveBtn = buttonContainer.createEl("button", {
         text: "\u2191",
@@ -5939,22 +5980,36 @@ var BufferCalcUI = class {
         cls: "buffer-calc-button buffer-calc-button-danger buffer-calc-button-small serial-dilution-remove-btn",
         attr: { title: "\u524A\u9664" }
       });
-      concentrationInput.addEventListener("input", () => {
-        data.targetConcentrations[index] = parseFloat(concentrationInput.value) || 0;
-        concentrationInput.dispatchEvent(new Event("change", { bubbles: true }));
-      });
+      const concentrationInput = concentrationRow.concentrationInput;
+      if (concentrationInput) {
+        concentrationInput.addEventListener("input", () => {
+          if (isExponentialMode) {
+            const exponent = parseFloat(concentrationInput.value) || -6;
+            data.targetConcentrations[index] = this.exponentToConcentration(exponent);
+          } else {
+            data.targetConcentrations[index] = parseFloat(concentrationInput.value) || 0;
+          }
+          concentrationInput.dispatchEvent(new Event("change", { bubbles: true }));
+        });
+      }
       insertAboveBtn.addEventListener("click", () => {
+        var _a;
         this.insertConcentrationAt(data, index, "before");
+        data.targetInputMode = (_a = document.querySelector(".serial-dilution-target-settings select")) == null ? void 0 : _a.value;
         this.renderTargetConcentrations(container, data);
         insertAboveBtn.dispatchEvent(new Event("change", { bubbles: true }));
       });
       insertBelowBtn.addEventListener("click", () => {
+        var _a;
         this.insertConcentrationAt(data, index, "after");
+        data.targetInputMode = (_a = document.querySelector(".serial-dilution-target-settings select")) == null ? void 0 : _a.value;
         this.renderTargetConcentrations(container, data);
         insertBelowBtn.dispatchEvent(new Event("change", { bubbles: true }));
       });
       removeBtn.addEventListener("click", () => {
+        var _a;
         data.targetConcentrations.splice(index, 1);
+        data.targetInputMode = (_a = document.querySelector(".serial-dilution-target-settings select")) == null ? void 0 : _a.value;
         this.renderTargetConcentrations(container, data);
         container.dispatchEvent(new Event("change", { bubbles: true }));
       });
@@ -5981,15 +6036,7 @@ var BufferCalcUI = class {
       });
       return;
     }
-    const summaryContainer = container.createEl("div", { cls: "serial-dilution-summary" });
-    summaryContainer.createEl("h3", { text: "\u30D7\u30ED\u30C8\u30B3\u30EB\u6982\u8981" });
-    const summaryList = summaryContainer.createEl("ul");
-    summaryList.createEl("li", { text: `\u7DCF\u30B9\u30C6\u30C3\u30D7\u6570: ${result.protocolSummary.totalSteps}` });
-    summaryList.createEl("li", { text: `\u5FC5\u8981\u30C1\u30E5\u30FC\u30D6\u6570: ${result.protocolSummary.requiredTubes}` });
-    summaryList.createEl("li", { text: `\u63A8\u5B9A\u6642\u9593: ${result.protocolSummary.estimatedTime}` });
-    summaryList.createEl("li", { text: `\u6700\u5927\u5E0C\u91C8\u500D\u7387: ${result.protocolSummary.highestDilutionFactor.toFixed(0)}\u500D` });
     const stepsContainer = container.createEl("div", { cls: "serial-dilution-steps" });
-    stepsContainer.createEl("h3", { text: "\u6BB5\u968E\u5E0C\u91C8\u306E\u624B\u9806" });
     const displayFormat = data.stepDisplayFormat || "text" /* TEXT */;
     if (displayFormat === "table" /* TABLE */) {
       const stepsTable = stepsContainer.createEl("table", { cls: "serial-dilution-table" });
@@ -6027,7 +6074,6 @@ var BufferCalcUI = class {
     }
     if (result.exportData) {
       const exportContainer = container.createEl("div", { cls: "serial-dilution-export" });
-      exportContainer.createEl("h3", { text: "\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8" });
       const exportButtons = exportContainer.createEl("div", { cls: "buffer-calc-export-buttons" });
       const csvBtn = exportButtons.createEl("button", {
         text: "CSV\u5F62\u5F0F\u3067\u30B3\u30D4\u30FC",
@@ -6103,6 +6149,22 @@ var BufferCalcUI = class {
   }
   formatConcentrationDisplay(concentration, unit) {
     return `${concentration.toFixed(this.settings.decimalPlaces)} ${unit}`;
+  }
+  /**
+   * Convert concentration in µM to exponent for 10^x M display
+   */
+  concentrationToExponent(concentrationInMicroMolar) {
+    if (concentrationInMicroMolar <= 0)
+      return -6;
+    const concentrationInMolar = concentrationInMicroMolar / 1e6;
+    return Math.log10(concentrationInMolar);
+  }
+  /**
+   * Convert exponent to concentration in µM
+   */
+  exponentToConcentration(exponent) {
+    const concentrationInMolar = Math.pow(10, exponent);
+    return concentrationInMolar * 1e6;
   }
 };
 
@@ -7134,6 +7196,7 @@ var BufferCalcPlugin = class extends import_obsidian10.Plugin {
         dilutionVolumeUnit: this.settings.defaultVolumeUnit,
         targetConcentrations: [100, 10, 1, 0.1],
         targetUnit: this.settings.defaultConcentrationUnit,
+        targetInputMode: "exponential" /* EXPONENTIAL */,
         stepDisplayFormat: "text" /* TEXT */
       };
     } else {

@@ -391,6 +391,11 @@ export enum StepDisplayFormat {
 	TABLE = 'table'
 }
 
+export enum ConcentrationInputMode {
+	STANDARD = 'standard',
+	EXPONENTIAL = 'exponential'
+}
+
 export interface SerialDilutionData {
 	name?: string;
 	stockConcentration: number;
@@ -403,6 +408,7 @@ export interface SerialDilutionData {
 	dilutionVolumeUnit: VolumeUnit;
 	targetConcentrations: number[];
 	targetUnit: ConcentrationUnit;
+	targetInputMode?: ConcentrationInputMode;
 	stepDisplayFormat?: StepDisplayFormat;
 	notes?: string;
 }
