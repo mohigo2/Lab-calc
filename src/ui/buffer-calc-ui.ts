@@ -1,6 +1,7 @@
 import {
 	MarkdownPostProcessorContext,
-	Notice
+	Notice,
+	MarkdownView
 } from 'obsidian';
 
 import {
@@ -34,6 +35,8 @@ export class BufferCalcUI {
 	private plugin?: any; // BufferCalcPlugin instance
 	private lastResult: CalculationResult | null = null;
 	private mobileOptimization: MobileOptimization;
+	private isUpdatingSource: boolean = false;
+	private sourceUpdateTimeout: NodeJS.Timeout | null = null;
 
 	constructor(
 		container: HTMLElement,
@@ -102,7 +105,15 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		this.createEditableTitle(header, data);
+		
+		// タイトル作成（モードに応じて編集可能/読み取り専用を切り替え）
+		const isEditable = this.isEditableMode();
+		
+		if (isEditable) {
+			this.createEditableTitle(header, data);
+		} else {
+			this.createReadOnlyTitle(header, data, 'バッファー計算');
+		}
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -120,8 +131,14 @@ export class BufferCalcUI {
 		const volumeUnitSelect = volumeContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit || this.settings.defaultVolumeUnit);
 
-		volumeInput.addEventListener('input', () => this.updateCalculation());
-		volumeUnitSelect.addEventListener('change', () => this.updateCalculation());
+		volumeInput.addEventListener('input', () => {
+			this.updateCalculation();
+			this.debouncedUpdateBlockSource();
+		});
+		volumeUnitSelect.addEventListener('change', () => {
+			this.updateCalculation();
+			this.updateBlockSource();
+		});
 
 		// Components section
 		const componentsContainer = this.container.createEl('div', { cls: 'buffer-calc-components' });
@@ -161,6 +178,9 @@ export class BufferCalcUI {
 
 		// Results container
 		const resultsContainer = this.container.createEl('div', { cls: 'buffer-calc-results' });
+
+		// Disable inputs if in reading mode
+		this.disableInputsForReadingMode(this.container);
 
 		// Initial calculation
 		this.updateCalculation();
@@ -212,6 +232,7 @@ export class BufferCalcUI {
 		nameInput.addEventListener('input', () => {
 			component.name = nameInput.value;
 			this.updateCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Stock concentration
@@ -230,11 +251,13 @@ export class BufferCalcUI {
 		stockInput.addEventListener('input', () => {
 			component.stockConc = parseFloat(stockInput.value) || 0;
 			this.updateCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 		
 		stockUnitSelect.addEventListener('change', () => {
 			component.stockUnit = stockUnitSelect.value as ConcentrationUnit;
 			this.updateCalculation();
+			this.updateBlockSource();
 		});
 
 		// Final concentration
@@ -253,11 +276,13 @@ export class BufferCalcUI {
 		finalInput.addEventListener('input', () => {
 			component.finalConc = parseFloat(finalInput.value) || 0;
 			this.updateCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 		
 		finalUnitSelect.addEventListener('change', () => {
 			component.finalUnit = finalUnitSelect.value as ConcentrationUnit;
 			this.updateCalculation();
+			this.updateBlockSource();
 		});
 
 		// Lot number (optional)
@@ -273,6 +298,7 @@ export class BufferCalcUI {
 
 		lotInput.addEventListener('input', () => {
 			component.lotNumber = lotInput.value || undefined;
+			this.debouncedUpdateBlockSource();
 		});
 	}
 
@@ -454,20 +480,11 @@ export class BufferCalcUI {
 			});
 
 			// Solvent instruction
-			console.log('Solvent display debug:');
-			console.log('- result.solventVolume:', result.solventVolume);
-			console.log('- Condition (> 0):', result.solventVolume > 0);
-			
 			if (result.solventVolume > 0) {
-				console.log('- Adding solvent instruction to UI');
 				const solventInstruction = instructionsList.createEl('li', { cls: 'buffer-calc-instruction-item' });
 				const data = this.blockContent.data as BufferData;
 				const solventDisplay = ConversionUtils.optimizeVolumeDisplay(result.solventVolume, data.volumeUnit || this.settings.defaultVolumeUnit);
-				
-				console.log('- Solvent display:', solventDisplay);
 				solventInstruction.createEl('span', { text: `水またはバッファーを加えて総体積を ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit} にする` });
-			} else {
-				console.log('- Solvent instruction NOT added (volume <= 0)');
 			}
 		}
 
@@ -539,7 +556,13 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		this.createEditableStockTitle(header, data);
+		
+		// タイトル作成（モードに応じて編集可能/読み取り専用を切り替え）
+		if (this.isEditableMode()) {
+			this.createEditableStockTitle(header, data);
+		} else {
+			this.createReadOnlyTitle(header, data, 'ストック溶液計算');
+		}
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -563,6 +586,7 @@ export class BufferCalcUI {
 		reagentInput.addEventListener('input', () => {
 			data.reagentName = reagentInput.value;
 			this.updateStockCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Molecular weight input
@@ -579,6 +603,7 @@ export class BufferCalcUI {
 		mwInput.addEventListener('input', () => {
 			data.molecularWeight = parseFloat(mwInput.value) || undefined;
 			this.updateStockCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Setup reagent autocomplete (after mwInput is defined)
@@ -608,11 +633,13 @@ export class BufferCalcUI {
 		concInput.addEventListener('input', () => {
 			data.targetConcentration = parseFloat(concInput.value) || 0;
 			this.updateStockCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		concUnitSelect.addEventListener('change', () => {
 			data.concentrationUnit = concUnitSelect.value as ConcentrationUnit;
 			this.updateStockCalculation();
+			this.updateBlockSource();
 		});
 
 		// Volume input
@@ -631,11 +658,13 @@ export class BufferCalcUI {
 		volumeInput.addEventListener('input', () => {
 			data.volume = parseFloat(volumeInput.value) || 0;
 			this.updateStockCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		volumeUnitSelect.addEventListener('change', () => {
 			data.volumeUnit = volumeUnitSelect.value as VolumeUnit;
 			this.updateStockCalculation();
+			this.updateBlockSource();
 		});
 
 		// Purity input (optional)
@@ -655,6 +684,7 @@ export class BufferCalcUI {
 			const purity = parseFloat(purityInput.value);
 			data.purity = (purity > 0 && purity <= 100) ? purity : undefined;
 			this.updateStockCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Solvent input (optional)
@@ -671,10 +701,14 @@ export class BufferCalcUI {
 		solventInput.addEventListener('input', () => {
 			data.solvent = solventInput.value;
 			this.updateStockCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Results container
 		const resultsContainer = this.container.createEl('div', { cls: 'buffer-calc-results' });
+
+			// Disable inputs if in reading mode
+			this.disableInputsForReadingMode(this.container);
 
 			// Initial calculation
 			this.updateStockCalculation();
@@ -695,7 +729,13 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		this.createEditableDilutionTitle(header, data);
+		
+		// タイトル作成（モードに応じて編集可能/読み取り専用を切り替え）
+		if (this.isEditableMode()) {
+			this.createEditableDilutionTitle(header, data);
+		} else {
+			this.createReadOnlyTitle(header, data, '希釈計算');
+		}
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -716,11 +756,13 @@ export class BufferCalcUI {
 		stockConcInput.addEventListener('input', () => {
 			data.stockConcentration = parseFloat(stockConcInput.value) || 0;
 			this.updateDilutionCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		stockConcUnitSelect.addEventListener('change', () => {
 			data.stockConcentrationUnit = stockConcUnitSelect.value as ConcentrationUnit;
 			this.updateDilutionCalculation();
+			this.updateBlockSource();
 		});
 
 		// Final concentration
@@ -739,11 +781,13 @@ export class BufferCalcUI {
 		finalConcInput.addEventListener('input', () => {
 			data.finalConcentration = parseFloat(finalConcInput.value) || 0;
 			this.updateDilutionCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		finalConcUnitSelect.addEventListener('change', () => {
 			data.finalConcentrationUnit = finalConcUnitSelect.value as ConcentrationUnit;
 			this.updateDilutionCalculation();
+			this.updateBlockSource();
 		});
 
 		// Final volume
@@ -762,11 +806,13 @@ export class BufferCalcUI {
 		finalVolumeInput.addEventListener('input', () => {
 			data.finalVolume = parseFloat(finalVolumeInput.value) || 0;
 			this.updateDilutionCalculation();
+			this.debouncedUpdateBlockSource();
 		});
 
 		finalVolumeUnitSelect.addEventListener('change', () => {
 			data.volumeUnit = finalVolumeUnitSelect.value as VolumeUnit;
 			this.updateDilutionCalculation();
+			this.updateBlockSource();
 		});
 
 		// Dilution factor (calculated and displayed)
@@ -782,6 +828,9 @@ export class BufferCalcUI {
 
 		// Store dilution factor display for updates
 		(this as any).dilutionFactorDisplay = dilutionFactorDisplay;
+
+		// Disable inputs if in reading mode
+		this.disableInputsForReadingMode(this.container);
 
 			// Initial calculation
 			this.updateDilutionCalculation();
@@ -1108,6 +1157,27 @@ export class BufferCalcUI {
 	}
 
 	/**
+	 * 読み取り専用タイトルを作成（リーディングモード用）
+	 */
+	private createReadOnlyTitle(container: HTMLElement, data: BufferData | StockData | DilutionData | SerialDilutionData, defaultName: string): void {
+		const titleContainer = container.createEl('div', { cls: 'buffer-calc-title-container' });
+		
+		// 読み取り専用タイトル表示
+		titleContainer.createEl('h3', {
+			text: data.name || defaultName,
+			cls: 'buffer-calc-title readonly-title',
+			attr: { title: 'リーディングモードでは編集できません' }
+		});
+
+		// 読み取り専用であることを示すアイコン
+		titleContainer.createEl('span', {
+			text: '🔒',
+			cls: 'readonly-indicator',
+			attr: { title: 'リーディングモード - 編集不可' }
+		});
+	}
+
+	/**
 	 * 編集可能なタイトルを作成
 	 */
 	private createEditableTitle(container: HTMLElement, data: BufferData): void {
@@ -1158,6 +1228,7 @@ export class BufferCalcUI {
 				const newName = titleInput.value.trim();
 				data.name = newName || undefined;
 				titleDisplay.textContent = newName || 'バッファー計算';
+				this.updateBlockSource();
 			}
 
 			titleDisplay.style.display = 'inline-block';
@@ -1232,6 +1303,7 @@ export class BufferCalcUI {
 				const newName = titleInput.value.trim();
 				data.name = newName || undefined;
 				titleDisplay.textContent = newName || 'ストック溶液計算';
+				this.updateBlockSource();
 			}
 
 			titleDisplay.style.display = 'inline-block';
@@ -1306,6 +1378,7 @@ export class BufferCalcUI {
 				const newName = titleInput.value.trim();
 				data.name = newName || undefined;
 				titleDisplay.textContent = newName || '希釈計算';
+				this.updateBlockSource();
 			}
 
 			titleDisplay.style.display = 'inline-block';
@@ -1334,7 +1407,13 @@ export class BufferCalcUI {
 		
 		// Header
 		const header = this.container.createEl('div', { cls: 'buffer-calc-header' });
-		this.createSerialDilutionEditableTitle(header, data);
+		
+		// タイトル作成（モードに応じて編集可能/読み取り専用を切り替え）
+		if (this.isEditableMode()) {
+			this.createSerialDilutionEditableTitle(header, data);
+		} else {
+			this.createReadOnlyTitle(header, data, 'Serial Dilution Protocol');
+		}
 
 		// Controls container
 		const controls = this.container.createEl('div', { cls: 'buffer-calc-controls' });
@@ -1476,6 +1555,8 @@ export class BufferCalcUI {
 				// Calculate results
 				const result = this.calculationEngine.calculateSerialDilution(data);
 				this.renderSerialDilutionResults(resultsContainer, result, data);
+				// Update source with debounce for input events
+				this.debouncedUpdateBlockSource();
 			} catch (error) {
 				console.error('Serial dilution calculation error:', error);
 				resultsContainer.innerHTML = `<div class="buffer-calc-error">計算エラー: ${error.message}</div>`;
@@ -1495,10 +1576,14 @@ export class BufferCalcUI {
 			toggleUnitSelector();
 			this.renderTargetConcentrations(targetConcentrationsContainer, data);
 			recalculate();
+			this.updateBlockSource();
 		});
 
 
 		// addConcentrationBtn event listener removed per user request
+
+		// Disable inputs if in reading mode
+		this.disableInputsForReadingMode(this.container);
 
 		// Initial rendering and calculation
 		this.renderTargetConcentrations(targetConcentrationsContainer, data);
@@ -1770,6 +1855,7 @@ export class BufferCalcUI {
 				const newName = titleInput.value.trim();
 				data.name = newName || undefined;
 				titleDisplay.textContent = newName || 'Serial Dilution Protocol';
+				this.updateBlockSource();
 			}
 
 			titleDisplay.style.display = 'inline-block';
@@ -1815,6 +1901,278 @@ export class BufferCalcUI {
 	private exponentToConcentration(exponent: number): number {
 		const concentrationInMolar = Math.pow(10, exponent);
 		return concentrationInMolar * 1000000; // M to µM
+	}
+
+	/**
+	 * Check if the current view mode allows editing
+	 * Returns true for source mode and live preview mode, false for reading mode
+	 */
+	private isEditableMode(): boolean {
+		try {
+			const activeView = this.plugin?.app?.workspace?.getActiveViewOfType(MarkdownView);
+			if (!activeView) {
+				return false;
+			}
+
+			const mode = activeView.getMode();
+			
+			// Source mode is always editable
+			if (mode === 'source') {
+				return true;
+			}
+
+			// Preview mode: need to distinguish live preview from reading mode
+			if (mode === 'preview') {
+				// Check if we're in the same file context
+				const isSameFile = activeView.file?.path === this.context.sourcePath;
+				if (!isSameFile) {
+					return false;
+				}
+
+				// Check DOM for editing elements
+				try {
+					const viewEl = activeView.containerEl;
+					
+					// Look for CodeMirror editor elements (live preview has these)
+					const hasCodeMirror = viewEl.querySelector('.cm-editor') !== null ||
+						viewEl.querySelector('.CodeMirror') !== null ||
+						viewEl.classList.contains('mod-cm6');
+					
+					// Look for reading mode indicators
+					const hasReadingClass = viewEl.classList.contains('is-readable-line-width') ||
+						viewEl.querySelector('.markdown-reading-view') !== null;
+					
+					// Live preview: has editor elements, no reading mode elements
+					// Reading mode: no editor elements, has reading mode elements
+					if (hasCodeMirror && !hasReadingClass) {
+						return true;
+					} else if (hasReadingClass || !hasCodeMirror) {
+						return false;
+					}
+				} catch (domError) {
+					// DOM check failed, fallback to editor testing
+				}
+
+				// Fallback: Test editor functionality  
+				const editor = activeView.editor;
+				if (!editor) {
+					return false;
+				}
+
+				// Test if we can perform edit operations
+				try {
+					const selection = editor.getSelection();
+					const cursor = editor.getCursor();
+					
+					// If we can get both selection and cursor, likely live preview
+					return typeof selection === 'string' && !!cursor;
+				} catch (editorError) {
+					return false;
+				}
+			}
+
+			return false;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	/**
+	 * Disable input elements in controls area when in reading mode (excludes title area)
+	 */
+	private disableInputsForReadingMode(container: HTMLElement): void {
+		if (!this.isEditableMode()) {
+			// Get all input elements but exclude those in title container
+			const inputs = container.querySelectorAll(
+				'.buffer-calc-controls input, ' +
+				'.buffer-calc-controls select, ' +
+				'.buffer-calc-controls textarea, ' +
+				'.buffer-calc-controls button, ' +
+				'.buffer-calc-results input, ' +
+				'.buffer-calc-results select, ' +
+				'.buffer-calc-results button, ' +
+				'.serial-dilution-target-concentrations input, ' +
+				'.serial-dilution-target-concentrations button, ' +
+				'.buffer-calc-components input, ' +
+				'.buffer-calc-components select, ' +
+				'.buffer-calc-components button'
+			) as NodeListOf<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLButtonElement>;
+			
+			inputs.forEach(element => {
+				// Skip if element is inside title container
+				const isInTitleContainer = element.closest('.buffer-calc-title-container');
+				if (!isInTitleContainer) {
+					element.disabled = true;
+					element.classList.add('buffer-calc-readonly');
+				}
+			});
+
+			// Also disable contenteditable elements but exclude title area
+			const editableElements = container.querySelectorAll(
+				'.buffer-calc-controls [contenteditable="true"], ' +
+				'.buffer-calc-results [contenteditable="true"], ' +
+				'.serial-dilution-target-concentrations [contenteditable="true"], ' +
+				'.buffer-calc-components [contenteditable="true"]'
+			) as NodeListOf<HTMLElement>;
+			
+			editableElements.forEach(element => {
+				const isInTitleContainer = element.closest('.buffer-calc-title-container');
+				if (!isInTitleContainer) {
+					element.contentEditable = 'false';
+					element.classList.add('buffer-calc-readonly');
+				}
+			});
+
+		}
+	}
+
+	/**
+	 * Debounced version of updateBlockSource for frequent input changes
+	 */
+	private debouncedUpdateBlockSource(): void {
+		if (this.sourceUpdateTimeout) {
+			clearTimeout(this.sourceUpdateTimeout);
+		}
+		this.sourceUpdateTimeout = setTimeout(() => {
+			this.updateBlockSource();
+		}, 300);
+	}
+
+	/**
+	 * Update the markdown source with current data using Editor API
+	 */
+	private async updateBlockSource(): Promise<void> {
+		// Prevent concurrent updates
+		if (this.isUpdatingSource) {
+			return;
+		}
+
+		// Check if current mode allows editing
+		if (!this.isEditableMode()) {
+			return;
+		}
+
+		this.isUpdatingSource = true;
+
+		try {
+			// Get the active markdown view and editor
+			const activeView = this.plugin?.app?.workspace?.getActiveViewOfType(MarkdownView);
+			if (!activeView || !('editor' in activeView)) {
+				console.warn('No active markdown editor found');
+				return;
+			}
+
+			const editor = (activeView as any).editor;
+			if (!editor) {
+				console.warn('Editor not available');
+				return;
+			}
+
+			// Verify we're editing the correct file
+			const currentFile = activeView.file;
+			if (!currentFile || currentFile.path !== this.context.sourcePath) {
+				console.warn('Current file does not match context path:', 
+					{ current: currentFile?.path, expected: this.context.sourcePath });
+				return;
+			}
+
+			// Get section information to determine the exact location of this code block
+			const sectionInfo = this.context.getSectionInfo?.(this.container);
+			if (!sectionInfo) {
+				console.warn('Could not get section information');
+				return;
+			}
+
+			console.log('Section info:', sectionInfo);
+
+			const { lineStart, lineEnd } = sectionInfo;
+			if (lineStart === undefined || lineEnd === undefined) {
+				console.warn('Invalid line boundaries:', { lineStart, lineEnd });
+				return;
+			}
+
+			// Generate new YAML content
+			const newYaml = this.dataToYAML(this.blockContent.data, this.blockContent.type);
+			console.log('Generated new YAML:', newYaml);
+
+			// Use editor.replaceRange to update the code block content
+			const from = { line: lineStart, ch: 0 };
+			const to = { line: lineEnd, ch: editor.getLine(lineEnd)?.length || 0 };
+
+			console.log('Replacing range:', { from, to });
+			console.log('Current content lines:', lineStart, 'to', lineEnd);
+
+			// Replace the entire code block
+			editor.replaceRange(newYaml, from, to);
+
+			console.log('Block source updated successfully via editor API');
+
+		} catch (error) {
+			console.error('Error updating block source:', error);
+		} finally {
+			// Reset the update flag after a short delay to prevent immediate re-triggering
+			setTimeout(() => {
+				this.isUpdatingSource = false;
+			}, 100);
+		}
+	}
+
+	/**
+	 * Convert data object back to YAML format
+	 */
+	private dataToYAML(data: any, type: string): string {
+		let yaml = `\`\`\`${type}\n`;
+		
+		if (type === 'buffer') {
+			yaml += `name: ${data.name || 'バッファー計算'}\n`;
+			yaml += `totalVolume: ${data.totalVolume}\n`;
+			yaml += `volumeUnit: ${data.volumeUnit}\n`;
+			if (data.components && data.components.length > 0) {
+				yaml += `components:\n`;
+				data.components.forEach((comp: any) => {
+					yaml += `  - name: ${comp.name}\n`;
+					yaml += `    stockConc: ${comp.stockConc}\n`;
+					yaml += `    stockUnit: ${comp.stockUnit}\n`;
+					yaml += `    finalConc: ${comp.finalConc}\n`;
+					yaml += `    finalUnit: ${comp.finalUnit}\n`;
+				});
+			}
+		} else if (type === 'stock') {
+			yaml += `name: ${data.name || 'ストック溶液計算'}\n`;
+			yaml += `reagentName: ${data.reagentName || ''}\n`;
+			if (data.molecularWeight) yaml += `molecularWeight: ${data.molecularWeight}\n`;
+			yaml += `targetConcentration: ${data.targetConcentration}\n`;
+			yaml += `concentrationUnit: ${data.concentrationUnit}\n`;
+			yaml += `volume: ${data.volume}\n`;
+			yaml += `volumeUnit: ${data.volumeUnit}\n`;
+			if (data.purity) yaml += `purity: ${data.purity}\n`;
+			if (data.solvent) yaml += `solvent: ${data.solvent}\n`;
+		} else if (type === 'dilution') {
+			yaml += `name: ${data.name || '希釈計算'}\n`;
+			yaml += `stockConcentration: ${data.stockConcentration}\n`;
+			yaml += `stockConcentrationUnit: ${data.stockConcentrationUnit}\n`;
+			yaml += `finalConcentration: ${data.finalConcentration}\n`;
+			yaml += `finalConcentrationUnit: ${data.finalConcentrationUnit}\n`;
+			yaml += `finalVolume: ${data.finalVolume}\n`;
+			yaml += `volumeUnit: ${data.volumeUnit}\n`;
+		} else if (type === 'serial-dilution') {
+			yaml += `name: ${data.name || 'Serial Dilution Protocol'}\n`;
+			yaml += `stockConcentration: ${data.stockConcentration}\n`;
+			yaml += `stockUnit: ${data.stockUnit}\n`;
+			yaml += `cellVolume: ${data.cellVolume}\n`;
+			yaml += `cellVolumeUnit: ${data.cellVolumeUnit}\n`;
+			yaml += `additionVolume: ${data.additionVolume}\n`;
+			yaml += `additionVolumeUnit: ${data.additionVolumeUnit}\n`;
+			yaml += `dilutionVolume: ${data.dilutionVolume}\n`;
+			yaml += `dilutionVolumeUnit: ${data.dilutionVolumeUnit}\n`;
+			yaml += `targetConcentrations: [${data.targetConcentrations.join(', ')}]\n`;
+			yaml += `targetUnit: ${data.targetUnit}\n`;
+			yaml += `targetInputMode: ${data.targetInputMode}\n`;
+			yaml += `stepDisplayFormat: ${data.stepDisplayFormat}\n`;
+		}
+		
+		yaml += '```';
+		return yaml;
 	}
 
 }

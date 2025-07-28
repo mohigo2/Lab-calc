@@ -2420,3 +2420,57 @@
 		min-width: 50px;
 	}
 }
+
+/* Reading mode styles */
+.readonly-title {
+    color: var(--text-muted) !important;
+    cursor: default !important;
+    opacity: 0.8;
+}
+
+.readonly-indicator {
+    margin-left: 8px;
+    font-size: 0.8em;
+    opacity: 0.7;
+    cursor: help;
+    color: var(--text-muted);
+}
+
+/* Reading mode input disable styles */
+.buffer-calc-readonly {
+    background-color: var(--background-secondary) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+    opacity: 0.6 !important;
+    border-color: var(--background-modifier-border) !important;
+}
+
+/* Specific styles for different input types in reading mode */
+input.buffer-calc-readonly,
+select.buffer-calc-readonly,
+textarea.buffer-calc-readonly {
+    pointer-events: none;
+}
+
+button.buffer-calc-readonly {
+    background-color: var(--background-secondary) !important;
+    border-color: var(--background-modifier-border) !important;
+    color: var(--text-muted) !important;
+    cursor: not-allowed !important;
+    opacity: 0.5 !important;
+    box-shadow: none !important;
+}
+
+/* Visual indicator for readonly containers */
+.buffer-calc-controls:has(.buffer-calc-readonly)::before {
+    content: "🔒 読み取り専用モード";
+    display: block;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    font-size: 0.85em;
+    color: var(--text-muted);
+    text-align: center;
+}

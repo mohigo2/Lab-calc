@@ -2615,8 +2615,8 @@ var DataViewIntegrationModal = class extends import_obsidian6.Modal {
     };
   }
   insertQueryIntoEditor(query) {
-    const { MarkdownView: MarkdownView2 } = require("obsidian");
-    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView2);
+    const { MarkdownView: MarkdownView3 } = require("obsidian");
+    const activeView = this.app.workspace.getActiveViewOfType(MarkdownView3);
     if (!activeView) {
       new import_obsidian6.Notice("\u30A2\u30AF\u30C6\u30A3\u30D6\u306AMarkdown\u30A8\u30C7\u30A3\u30BF\u30FC\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093");
       return;
@@ -4812,6 +4812,8 @@ var BufferCalcUI = class {
   constructor(container, blockContent, calculationEngine, reagentDatabase, settings, context, plugin) {
     // BufferCalcPlugin instance
     this.lastResult = null;
+    this.isUpdatingSource = false;
+    this.sourceUpdateTimeout = null;
     this.container = container;
     this.blockContent = blockContent;
     this.calculationEngine = calculationEngine;
@@ -4861,7 +4863,12 @@ var BufferCalcUI = class {
   async renderBufferCalculator() {
     const data = this.blockContent.data;
     const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-    this.createEditableTitle(header, data);
+    const isEditable = this.isEditableMode();
+    if (isEditable) {
+      this.createEditableTitle(header, data);
+    } else {
+      this.createReadOnlyTitle(header, data, "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97");
+    }
     const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
     const volumeContainer = controls.createEl("div", { cls: "buffer-calc-volume-input" });
     volumeContainer.createEl("label", { text: "\u7DCF\u4F53\u7A4D:" });
@@ -4872,8 +4879,14 @@ var BufferCalcUI = class {
     });
     const volumeUnitSelect = volumeContainer.createEl("select", { cls: "buffer-calc-unit-select" });
     this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit || this.settings.defaultVolumeUnit);
-    volumeInput.addEventListener("input", () => this.updateCalculation());
-    volumeUnitSelect.addEventListener("change", () => this.updateCalculation());
+    volumeInput.addEventListener("input", () => {
+      this.updateCalculation();
+      this.debouncedUpdateBlockSource();
+    });
+    volumeUnitSelect.addEventListener("change", () => {
+      this.updateCalculation();
+      this.updateBlockSource();
+    });
     const componentsContainer = this.container.createEl("div", { cls: "buffer-calc-components" });
     componentsContainer.createEl("h4", { text: "\u6210\u5206" });
     const componentsList = componentsContainer.createEl("div", { cls: "buffer-calc-components-list" });
@@ -4901,6 +4914,7 @@ var BufferCalcUI = class {
       this.updateCalculation();
     });
     const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+    this.disableInputsForReadingMode(this.container);
     this.updateCalculation();
   }
   renderComponent(container, component, index) {
@@ -4938,6 +4952,7 @@ var BufferCalcUI = class {
     nameInput.addEventListener("input", () => {
       component.name = nameInput.value;
       this.updateCalculation();
+      this.debouncedUpdateBlockSource();
     });
     const stockContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
     stockContainer.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:" });
@@ -4951,10 +4966,12 @@ var BufferCalcUI = class {
     stockInput.addEventListener("input", () => {
       component.stockConc = parseFloat(stockInput.value) || 0;
       this.updateCalculation();
+      this.debouncedUpdateBlockSource();
     });
     stockUnitSelect.addEventListener("change", () => {
       component.stockUnit = stockUnitSelect.value;
       this.updateCalculation();
+      this.updateBlockSource();
     });
     const finalContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
     finalContainer.createEl("label", { text: "\u6700\u7D42\u6FC3\u5EA6:" });
@@ -4968,10 +4985,12 @@ var BufferCalcUI = class {
     finalInput.addEventListener("input", () => {
       component.finalConc = parseFloat(finalInput.value) || 0;
       this.updateCalculation();
+      this.debouncedUpdateBlockSource();
     });
     finalUnitSelect.addEventListener("change", () => {
       component.finalUnit = finalUnitSelect.value;
       this.updateCalculation();
+      this.updateBlockSource();
     });
     const lotContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
     lotContainer.createEl("label", { text: "\u30ED\u30C3\u30C8\u756A\u53F7\uFF08\u4EFB\u610F\uFF09:" });
@@ -4983,6 +5002,7 @@ var BufferCalcUI = class {
     });
     lotInput.addEventListener("input", () => {
       component.lotNumber = lotInput.value || void 0;
+      this.debouncedUpdateBlockSource();
     });
   }
   setupReagentAutocomplete(input, container, onSelect) {
@@ -5120,18 +5140,11 @@ var BufferCalcUI = class {
           });
         }
       });
-      console.log("Solvent display debug:");
-      console.log("- result.solventVolume:", result.solventVolume);
-      console.log("- Condition (> 0):", result.solventVolume > 0);
       if (result.solventVolume > 0) {
-        console.log("- Adding solvent instruction to UI");
         const solventInstruction = instructionsList.createEl("li", { cls: "buffer-calc-instruction-item" });
         const data = this.blockContent.data;
         const solventDisplay = ConversionUtils.optimizeVolumeDisplay(result.solventVolume, data.volumeUnit || this.settings.defaultVolumeUnit);
-        console.log("- Solvent display:", solventDisplay);
         solventInstruction.createEl("span", { text: `\u6C34\u307E\u305F\u306F\u30D0\u30C3\u30D5\u30A1\u30FC\u3092\u52A0\u3048\u3066\u7DCF\u4F53\u7A4D\u3092 ${solventDisplay.value.toFixed(this.settings.decimalPlaces)} ${solventDisplay.unit} \u306B\u3059\u308B` });
-      } else {
-        console.log("- Solvent instruction NOT added (volume <= 0)");
       }
     }
     if (result.warnings.length > 0) {
@@ -5187,7 +5200,11 @@ var BufferCalcUI = class {
       const data = this.blockContent.data;
       console.log("Stock calculator - Starting render with data:", data);
       const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-      this.createEditableStockTitle(header, data);
+      if (this.isEditableMode()) {
+        this.createEditableStockTitle(header, data);
+      } else {
+        this.createReadOnlyTitle(header, data, "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97");
+      }
       const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
       const reagentContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       reagentContainer.createEl("label", { text: "\u8A66\u85AC\u540D:" });
@@ -5204,6 +5221,7 @@ var BufferCalcUI = class {
       reagentInput.addEventListener("input", () => {
         data.reagentName = reagentInput.value;
         this.updateStockCalculation();
+        this.debouncedUpdateBlockSource();
       });
       const mwContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       mwContainer.createEl("label", { text: "\u5206\u5B50\u91CF (g/mol):" });
@@ -5216,6 +5234,7 @@ var BufferCalcUI = class {
       mwInput.addEventListener("input", () => {
         data.molecularWeight = parseFloat(mwInput.value) || void 0;
         this.updateStockCalculation();
+        this.debouncedUpdateBlockSource();
       });
       this.setupReagentAutocomplete(reagentInput, suggestionsContainer, (reagent) => {
         data.reagentName = reagent.name;
@@ -5238,10 +5257,12 @@ var BufferCalcUI = class {
       concInput.addEventListener("input", () => {
         data.targetConcentration = parseFloat(concInput.value) || 0;
         this.updateStockCalculation();
+        this.debouncedUpdateBlockSource();
       });
       concUnitSelect.addEventListener("change", () => {
         data.concentrationUnit = concUnitSelect.value;
         this.updateStockCalculation();
+        this.updateBlockSource();
       });
       const volumeContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       volumeContainer.createEl("label", { text: "\u4F53\u7A4D:" });
@@ -5255,10 +5276,12 @@ var BufferCalcUI = class {
       volumeInput.addEventListener("input", () => {
         data.volume = parseFloat(volumeInput.value) || 0;
         this.updateStockCalculation();
+        this.debouncedUpdateBlockSource();
       });
       volumeUnitSelect.addEventListener("change", () => {
         data.volumeUnit = volumeUnitSelect.value;
         this.updateStockCalculation();
+        this.updateBlockSource();
       });
       const purityContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       purityContainer.createEl("label", { text: "\u7D14\u5EA6 (%, \u4EFB\u610F):" });
@@ -5274,6 +5297,7 @@ var BufferCalcUI = class {
         const purity = parseFloat(purityInput.value);
         data.purity = purity > 0 && purity <= 100 ? purity : void 0;
         this.updateStockCalculation();
+        this.debouncedUpdateBlockSource();
       });
       const solventContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       solventContainer.createEl("label", { text: "\u6EB6\u5A92 (\u4EFB\u610F):" });
@@ -5286,8 +5310,10 @@ var BufferCalcUI = class {
       solventInput.addEventListener("input", () => {
         data.solvent = solventInput.value;
         this.updateStockCalculation();
+        this.debouncedUpdateBlockSource();
       });
       const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
+      this.disableInputsForReadingMode(this.container);
       this.updateStockCalculation();
       console.log("Stock calculator - Render completed successfully");
     } catch (error) {
@@ -5303,7 +5329,11 @@ var BufferCalcUI = class {
       const data = this.blockContent.data;
       console.log("Dilution calculator - Starting render with data:", data);
       const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-      this.createEditableDilutionTitle(header, data);
+      if (this.isEditableMode()) {
+        this.createEditableDilutionTitle(header, data);
+      } else {
+        this.createReadOnlyTitle(header, data, "\u5E0C\u91C8\u8A08\u7B97");
+      }
       const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
       const stockConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       stockConcContainer.createEl("label", { text: "\u30B9\u30C8\u30C3\u30AF\u6FC3\u5EA6:" });
@@ -5317,10 +5347,12 @@ var BufferCalcUI = class {
       stockConcInput.addEventListener("input", () => {
         data.stockConcentration = parseFloat(stockConcInput.value) || 0;
         this.updateDilutionCalculation();
+        this.debouncedUpdateBlockSource();
       });
       stockConcUnitSelect.addEventListener("change", () => {
         data.stockConcentrationUnit = stockConcUnitSelect.value;
         this.updateDilutionCalculation();
+        this.updateBlockSource();
       });
       const finalConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       finalConcContainer.createEl("label", { text: "\u6700\u7D42\u6FC3\u5EA6:" });
@@ -5334,10 +5366,12 @@ var BufferCalcUI = class {
       finalConcInput.addEventListener("input", () => {
         data.finalConcentration = parseFloat(finalConcInput.value) || 0;
         this.updateDilutionCalculation();
+        this.debouncedUpdateBlockSource();
       });
       finalConcUnitSelect.addEventListener("change", () => {
         data.finalConcentrationUnit = finalConcUnitSelect.value;
         this.updateDilutionCalculation();
+        this.updateBlockSource();
       });
       const finalVolumeContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       finalVolumeContainer.createEl("label", { text: "\u6700\u7D42\u4F53\u7A4D:" });
@@ -5351,10 +5385,12 @@ var BufferCalcUI = class {
       finalVolumeInput.addEventListener("input", () => {
         data.finalVolume = parseFloat(finalVolumeInput.value) || 0;
         this.updateDilutionCalculation();
+        this.debouncedUpdateBlockSource();
       });
       finalVolumeUnitSelect.addEventListener("change", () => {
         data.volumeUnit = finalVolumeUnitSelect.value;
         this.updateDilutionCalculation();
+        this.updateBlockSource();
       });
       const dilutionFactorContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       dilutionFactorContainer.createEl("label", { text: "\u5E0C\u91C8\u500D\u7387 (\u81EA\u52D5\u8A08\u7B97):" });
@@ -5364,6 +5400,7 @@ var BufferCalcUI = class {
       });
       const resultsContainer = this.container.createEl("div", { cls: "buffer-calc-results" });
       this.dilutionFactorDisplay = dilutionFactorDisplay;
+      this.disableInputsForReadingMode(this.container);
       this.updateDilutionCalculation();
       console.log("Dilution calculator - Render completed successfully");
     } catch (error) {
@@ -5629,6 +5666,22 @@ var BufferCalcUI = class {
     });
   }
   /**
+   * 読み取り専用タイトルを作成（リーディングモード用）
+   */
+  createReadOnlyTitle(container, data, defaultName) {
+    const titleContainer = container.createEl("div", { cls: "buffer-calc-title-container" });
+    titleContainer.createEl("h3", {
+      text: data.name || defaultName,
+      cls: "buffer-calc-title readonly-title",
+      attr: { title: "\u30EA\u30FC\u30C7\u30A3\u30F3\u30B0\u30E2\u30FC\u30C9\u3067\u306F\u7DE8\u96C6\u3067\u304D\u307E\u305B\u3093" }
+    });
+    titleContainer.createEl("span", {
+      text: "\u{1F512}",
+      cls: "readonly-indicator",
+      attr: { title: "\u30EA\u30FC\u30C7\u30A3\u30F3\u30B0\u30E2\u30FC\u30C9 - \u7DE8\u96C6\u4E0D\u53EF" }
+    });
+  }
+  /**
    * 編集可能なタイトルを作成
    */
   createEditableTitle(container, data) {
@@ -5669,6 +5722,7 @@ var BufferCalcUI = class {
         const newName = titleInput.value.trim();
         data.name = newName || void 0;
         titleDisplay.textContent = newName || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97";
+        this.updateBlockSource();
       }
       titleDisplay.style.display = "inline-block";
       editButton.style.display = "inline-block";
@@ -5728,6 +5782,7 @@ var BufferCalcUI = class {
         const newName = titleInput.value.trim();
         data.name = newName || void 0;
         titleDisplay.textContent = newName || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97";
+        this.updateBlockSource();
       }
       titleDisplay.style.display = "inline-block";
       editButton.style.display = "inline-block";
@@ -5787,6 +5842,7 @@ var BufferCalcUI = class {
         const newName = titleInput.value.trim();
         data.name = newName || void 0;
         titleDisplay.textContent = newName || "\u5E0C\u91C8\u8A08\u7B97";
+        this.updateBlockSource();
       }
       titleDisplay.style.display = "inline-block";
       editButton.style.display = "inline-block";
@@ -5809,7 +5865,11 @@ var BufferCalcUI = class {
     var _a, _b, _c, _d;
     const data = this.blockContent.data;
     const header = this.container.createEl("div", { cls: "buffer-calc-header" });
-    this.createSerialDilutionEditableTitle(header, data);
+    if (this.isEditableMode()) {
+      this.createSerialDilutionEditableTitle(header, data);
+    } else {
+      this.createReadOnlyTitle(header, data, "Serial Dilution Protocol");
+    }
     const controls = this.container.createEl("div", { cls: "buffer-calc-controls" });
     const stockSection = controls.createEl("div", { cls: "buffer-calc-input-group" });
     const stockRow = stockSection.createEl("div", { cls: "buffer-calc-input-row" });
@@ -5896,6 +5956,7 @@ var BufferCalcUI = class {
         data.stepDisplayFormat = displayFormatSelect.value;
         const result = this.calculationEngine.calculateSerialDilution(data);
         this.renderSerialDilutionResults(resultsContainer, result, data);
+        this.debouncedUpdateBlockSource();
       } catch (error) {
         console.error("Serial dilution calculation error:", error);
         resultsContainer.innerHTML = `<div class="buffer-calc-error">\u8A08\u7B97\u30A8\u30E9\u30FC: ${error.message}</div>`;
@@ -5921,7 +5982,9 @@ var BufferCalcUI = class {
       toggleUnitSelector();
       this.renderTargetConcentrations(targetConcentrationsContainer, data);
       recalculate();
+      this.updateBlockSource();
     });
+    this.disableInputsForReadingMode(this.container);
     this.renderTargetConcentrations(targetConcentrationsContainer, data);
     recalculate();
   }
@@ -6133,6 +6196,7 @@ var BufferCalcUI = class {
         const newName = titleInput.value.trim();
         data.name = newName || void 0;
         titleDisplay.textContent = newName || "Serial Dilution Protocol";
+        this.updateBlockSource();
       }
       titleDisplay.style.display = "inline-block";
       editButton.style.display = "inline-block";
@@ -6169,6 +6233,247 @@ var BufferCalcUI = class {
   exponentToConcentration(exponent) {
     const concentrationInMolar = Math.pow(10, exponent);
     return concentrationInMolar * 1e6;
+  }
+  /**
+   * Check if the current view mode allows editing
+   * Returns true for source mode and live preview mode, false for reading mode
+   */
+  isEditableMode() {
+    var _a, _b, _c, _d;
+    try {
+      const activeView = (_c = (_b = (_a = this.plugin) == null ? void 0 : _a.app) == null ? void 0 : _b.workspace) == null ? void 0 : _c.getActiveViewOfType(import_obsidian8.MarkdownView);
+      if (!activeView) {
+        return false;
+      }
+      const mode = activeView.getMode();
+      if (mode === "source") {
+        return true;
+      }
+      if (mode === "preview") {
+        const isSameFile = ((_d = activeView.file) == null ? void 0 : _d.path) === this.context.sourcePath;
+        if (!isSameFile) {
+          return false;
+        }
+        try {
+          const viewEl = activeView.containerEl;
+          const hasCodeMirror = viewEl.querySelector(".cm-editor") !== null || viewEl.querySelector(".CodeMirror") !== null || viewEl.classList.contains("mod-cm6");
+          const hasReadingClass = viewEl.classList.contains("is-readable-line-width") || viewEl.querySelector(".markdown-reading-view") !== null;
+          if (hasCodeMirror && !hasReadingClass) {
+            return true;
+          } else if (hasReadingClass || !hasCodeMirror) {
+            return false;
+          }
+        } catch (domError) {
+        }
+        const editor = activeView.editor;
+        if (!editor) {
+          return false;
+        }
+        try {
+          const selection = editor.getSelection();
+          const cursor = editor.getCursor();
+          return typeof selection === "string" && !!cursor;
+        } catch (editorError) {
+          return false;
+        }
+      }
+      return false;
+    } catch (error) {
+      return false;
+    }
+  }
+  /**
+   * Disable input elements in controls area when in reading mode (excludes title area)
+   */
+  disableInputsForReadingMode(container) {
+    if (!this.isEditableMode()) {
+      const inputs = container.querySelectorAll(
+        ".buffer-calc-controls input, .buffer-calc-controls select, .buffer-calc-controls textarea, .buffer-calc-controls button, .buffer-calc-results input, .buffer-calc-results select, .buffer-calc-results button, .serial-dilution-target-concentrations input, .serial-dilution-target-concentrations button, .buffer-calc-components input, .buffer-calc-components select, .buffer-calc-components button"
+      );
+      inputs.forEach((element) => {
+        const isInTitleContainer = element.closest(".buffer-calc-title-container");
+        if (!isInTitleContainer) {
+          element.disabled = true;
+          element.classList.add("buffer-calc-readonly");
+        }
+      });
+      const editableElements = container.querySelectorAll(
+        '.buffer-calc-controls [contenteditable="true"], .buffer-calc-results [contenteditable="true"], .serial-dilution-target-concentrations [contenteditable="true"], .buffer-calc-components [contenteditable="true"]'
+      );
+      editableElements.forEach((element) => {
+        const isInTitleContainer = element.closest(".buffer-calc-title-container");
+        if (!isInTitleContainer) {
+          element.contentEditable = "false";
+          element.classList.add("buffer-calc-readonly");
+        }
+      });
+    }
+  }
+  /**
+   * Debounced version of updateBlockSource for frequent input changes
+   */
+  debouncedUpdateBlockSource() {
+    if (this.sourceUpdateTimeout) {
+      clearTimeout(this.sourceUpdateTimeout);
+    }
+    this.sourceUpdateTimeout = setTimeout(() => {
+      this.updateBlockSource();
+    }, 300);
+  }
+  /**
+   * Update the markdown source with current data using Editor API
+   */
+  async updateBlockSource() {
+    var _a, _b, _c, _d, _e, _f;
+    if (this.isUpdatingSource) {
+      return;
+    }
+    if (!this.isEditableMode()) {
+      return;
+    }
+    this.isUpdatingSource = true;
+    try {
+      const activeView = (_c = (_b = (_a = this.plugin) == null ? void 0 : _a.app) == null ? void 0 : _b.workspace) == null ? void 0 : _c.getActiveViewOfType(import_obsidian8.MarkdownView);
+      if (!activeView || !("editor" in activeView)) {
+        console.warn("No active markdown editor found");
+        return;
+      }
+      const editor = activeView.editor;
+      if (!editor) {
+        console.warn("Editor not available");
+        return;
+      }
+      const currentFile = activeView.file;
+      if (!currentFile || currentFile.path !== this.context.sourcePath) {
+        console.warn(
+          "Current file does not match context path:",
+          { current: currentFile == null ? void 0 : currentFile.path, expected: this.context.sourcePath }
+        );
+        return;
+      }
+      const sectionInfo = (_e = (_d = this.context).getSectionInfo) == null ? void 0 : _e.call(_d, this.container);
+      if (!sectionInfo) {
+        console.warn("Could not get section information");
+        return;
+      }
+      console.log("Section info:", sectionInfo);
+      const { lineStart, lineEnd } = sectionInfo;
+      if (lineStart === void 0 || lineEnd === void 0) {
+        console.warn("Invalid line boundaries:", { lineStart, lineEnd });
+        return;
+      }
+      const newYaml = this.dataToYAML(this.blockContent.data, this.blockContent.type);
+      console.log("Generated new YAML:", newYaml);
+      const from = { line: lineStart, ch: 0 };
+      const to = { line: lineEnd, ch: ((_f = editor.getLine(lineEnd)) == null ? void 0 : _f.length) || 0 };
+      console.log("Replacing range:", { from, to });
+      console.log("Current content lines:", lineStart, "to", lineEnd);
+      editor.replaceRange(newYaml, from, to);
+      console.log("Block source updated successfully via editor API");
+    } catch (error) {
+      console.error("Error updating block source:", error);
+    } finally {
+      setTimeout(() => {
+        this.isUpdatingSource = false;
+      }, 100);
+    }
+  }
+  /**
+   * Convert data object back to YAML format
+   */
+  dataToYAML(data, type) {
+    let yaml = `\`\`\`${type}
+`;
+    if (type === "buffer") {
+      yaml += `name: ${data.name || "\u30D0\u30C3\u30D5\u30A1\u30FC\u8A08\u7B97"}
+`;
+      yaml += `totalVolume: ${data.totalVolume}
+`;
+      yaml += `volumeUnit: ${data.volumeUnit}
+`;
+      if (data.components && data.components.length > 0) {
+        yaml += `components:
+`;
+        data.components.forEach((comp) => {
+          yaml += `  - name: ${comp.name}
+`;
+          yaml += `    stockConc: ${comp.stockConc}
+`;
+          yaml += `    stockUnit: ${comp.stockUnit}
+`;
+          yaml += `    finalConc: ${comp.finalConc}
+`;
+          yaml += `    finalUnit: ${comp.finalUnit}
+`;
+        });
+      }
+    } else if (type === "stock") {
+      yaml += `name: ${data.name || "\u30B9\u30C8\u30C3\u30AF\u6EB6\u6DB2\u8A08\u7B97"}
+`;
+      yaml += `reagentName: ${data.reagentName || ""}
+`;
+      if (data.molecularWeight)
+        yaml += `molecularWeight: ${data.molecularWeight}
+`;
+      yaml += `targetConcentration: ${data.targetConcentration}
+`;
+      yaml += `concentrationUnit: ${data.concentrationUnit}
+`;
+      yaml += `volume: ${data.volume}
+`;
+      yaml += `volumeUnit: ${data.volumeUnit}
+`;
+      if (data.purity)
+        yaml += `purity: ${data.purity}
+`;
+      if (data.solvent)
+        yaml += `solvent: ${data.solvent}
+`;
+    } else if (type === "dilution") {
+      yaml += `name: ${data.name || "\u5E0C\u91C8\u8A08\u7B97"}
+`;
+      yaml += `stockConcentration: ${data.stockConcentration}
+`;
+      yaml += `stockConcentrationUnit: ${data.stockConcentrationUnit}
+`;
+      yaml += `finalConcentration: ${data.finalConcentration}
+`;
+      yaml += `finalConcentrationUnit: ${data.finalConcentrationUnit}
+`;
+      yaml += `finalVolume: ${data.finalVolume}
+`;
+      yaml += `volumeUnit: ${data.volumeUnit}
+`;
+    } else if (type === "serial-dilution") {
+      yaml += `name: ${data.name || "Serial Dilution Protocol"}
+`;
+      yaml += `stockConcentration: ${data.stockConcentration}
+`;
+      yaml += `stockUnit: ${data.stockUnit}
+`;
+      yaml += `cellVolume: ${data.cellVolume}
+`;
+      yaml += `cellVolumeUnit: ${data.cellVolumeUnit}
+`;
+      yaml += `additionVolume: ${data.additionVolume}
+`;
+      yaml += `additionVolumeUnit: ${data.additionVolumeUnit}
+`;
+      yaml += `dilutionVolume: ${data.dilutionVolume}
+`;
+      yaml += `dilutionVolumeUnit: ${data.dilutionVolumeUnit}
+`;
+      yaml += `targetConcentrations: [${data.targetConcentrations.join(", ")}]
+`;
+      yaml += `targetUnit: ${data.targetUnit}
+`;
+      yaml += `targetInputMode: ${data.targetInputMode}
+`;
+      yaml += `stepDisplayFormat: ${data.stepDisplayFormat}
+`;
+    }
+    yaml += "```";
+    return yaml;
   }
 };
 
