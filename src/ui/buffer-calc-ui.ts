@@ -37,6 +37,15 @@ export class BufferCalcUI {
 	private mobileOptimization: MobileOptimization;
 	private isUpdatingSource: boolean = false;
 	private sourceUpdateTimeout: NodeJS.Timeout | null = null;
+	
+	// Focus monitoring for preventing updates during input
+	private activeInputElement: HTMLElement | null = null;
+	private focusedElementState: {
+		element: HTMLElement | null;
+		value: string;
+		selectionStart: number | null;
+		selectionEnd: number | null;
+	} = { element: null, value: '', selectionStart: null, selectionEnd: null };
 
 	constructor(
 		container: HTMLElement,
@@ -135,6 +144,7 @@ export class BufferCalcUI {
 			this.updateCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(volumeInput);
 		volumeUnitSelect.addEventListener('change', () => {
 			this.updateCalculation();
 			this.updateBlockSource();
@@ -234,6 +244,7 @@ export class BufferCalcUI {
 			this.updateCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(nameInput);
 
 		// Stock concentration
 		const stockContainer = componentEl.createEl('div', { cls: 'buffer-calc-input-group' });
@@ -253,6 +264,7 @@ export class BufferCalcUI {
 			this.updateCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(stockInput);
 		
 		stockUnitSelect.addEventListener('change', () => {
 			component.stockUnit = stockUnitSelect.value as ConcentrationUnit;
@@ -278,6 +290,7 @@ export class BufferCalcUI {
 			this.updateCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(finalInput);
 		
 		finalUnitSelect.addEventListener('change', () => {
 			component.finalUnit = finalUnitSelect.value as ConcentrationUnit;
@@ -300,6 +313,7 @@ export class BufferCalcUI {
 			component.lotNumber = lotInput.value || undefined;
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(lotInput);
 	}
 
 	private setupReagentAutocomplete(
@@ -340,7 +354,26 @@ export class BufferCalcUI {
 						container.style.display = 'none';
 					});
 				});
-			}, 300);
+			}, 150); // Reduced from 300ms to 150ms for better responsiveness
+		});
+
+		// Hide suggestions when input loses focus (with small delay to allow clicking suggestions)
+		input.addEventListener('blur', () => {
+			setTimeout(() => {
+				container.style.display = 'none';
+			}, 200);
+		});
+		
+		// Keep suggestions visible when hovering over them
+		container.addEventListener('mouseenter', () => {
+			clearTimeout(debounceTimer);
+		});
+		
+		// Hide suggestions when mouse leaves and input is not focused
+		container.addEventListener('mouseleave', () => {
+			if (document.activeElement !== input) {
+				container.style.display = 'none';
+			}
 		});
 
 		// Hide suggestions when clicking outside
@@ -588,6 +621,7 @@ export class BufferCalcUI {
 			this.updateStockCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(reagentInput);
 
 		// Molecular weight input
 		const mwContainer = controls.createEl('div', { cls: 'buffer-calc-input-group' });
@@ -605,6 +639,7 @@ export class BufferCalcUI {
 			this.updateStockCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(mwInput);
 
 		// Setup reagent autocomplete (after mwInput is defined)
 		this.setupReagentAutocomplete(reagentInput, suggestionsContainer, (reagent) => {
@@ -635,6 +670,7 @@ export class BufferCalcUI {
 			this.updateStockCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(concInput);
 
 		concUnitSelect.addEventListener('change', () => {
 			data.concentrationUnit = concUnitSelect.value as ConcentrationUnit;
@@ -660,6 +696,7 @@ export class BufferCalcUI {
 			this.updateStockCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(volumeInput);
 
 		volumeUnitSelect.addEventListener('change', () => {
 			data.volumeUnit = volumeUnitSelect.value as VolumeUnit;
@@ -686,6 +723,7 @@ export class BufferCalcUI {
 			this.updateStockCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(purityInput);
 
 		// Solvent input (optional)
 		const solventContainer = controls.createEl('div', { cls: 'buffer-calc-input-group' });
@@ -703,6 +741,7 @@ export class BufferCalcUI {
 			this.updateStockCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(solventInput);
 
 		// Results container
 		const resultsContainer = this.container.createEl('div', { cls: 'buffer-calc-results' });
@@ -758,6 +797,7 @@ export class BufferCalcUI {
 			this.updateDilutionCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(stockConcInput);
 
 		stockConcUnitSelect.addEventListener('change', () => {
 			data.stockConcentrationUnit = stockConcUnitSelect.value as ConcentrationUnit;
@@ -783,6 +823,7 @@ export class BufferCalcUI {
 			this.updateDilutionCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(finalConcInput);
 
 		finalConcUnitSelect.addEventListener('change', () => {
 			data.finalConcentrationUnit = finalConcUnitSelect.value as ConcentrationUnit;
@@ -808,6 +849,7 @@ export class BufferCalcUI {
 			this.updateDilutionCalculation();
 			this.debouncedUpdateBlockSource();
 		});
+		this.setupFocusMonitoring(finalVolumeInput);
 
 		finalVolumeUnitSelect.addEventListener('change', () => {
 			data.volumeUnit = finalVolumeUnitSelect.value as VolumeUnit;
@@ -2027,15 +2069,121 @@ export class BufferCalcUI {
 	}
 
 	/**
+	 * Check if there's an active input element that should prevent source updates
+	 */
+	private hasActiveInput(): boolean {
+		const activeElement = document.activeElement;
+		if (!activeElement) {
+			// Also check if any autocomplete suggestion containers are visible
+			const visibleSuggestions = this.container.querySelectorAll('.buffer-calc-suggestions');
+			for (let i = 0; i < visibleSuggestions.length; i++) {
+				const suggestion = visibleSuggestions[i] as HTMLElement;
+				if (suggestion.style.display !== 'none' && suggestion.style.display !== '') {
+					return true; // Autocomplete is active
+				}
+			}
+			return false;
+		}
+		
+		// Check if active element is within our container
+		const isWithinContainer = this.container.contains(activeElement);
+		if (!isWithinContainer) return false;
+		
+		// Check if it's an input element
+		const tagName = activeElement.tagName.toLowerCase();
+		return tagName === 'input' || tagName === 'textarea' || tagName === 'select';
+	}
+
+	/**
+	 * Save the current focused element state
+	 */
+	private saveFocusedElementState(): void {
+		const activeElement = document.activeElement as HTMLInputElement;
+		if (!activeElement || !this.container.contains(activeElement)) {
+			this.focusedElementState = { element: null, value: '', selectionStart: null, selectionEnd: null };
+			return;
+		}
+		
+		this.focusedElementState = {
+			element: activeElement,
+			value: activeElement.value || '',
+			selectionStart: activeElement.selectionStart,
+			selectionEnd: activeElement.selectionEnd
+		};
+	}
+
+	/**
+	 * Restore the previously focused element state
+	 */
+	private restoreFocusedElementState(): void {
+		if (!this.focusedElementState.element) return;
+		
+		try {
+			const element = this.focusedElementState.element as HTMLInputElement;
+			// Check if element still exists in DOM
+			if (!document.body.contains(element)) return;
+			
+			element.focus();
+			if (element.value !== this.focusedElementState.value) {
+				element.value = this.focusedElementState.value;
+			}
+			
+			// Restore cursor position
+			if (this.focusedElementState.selectionStart !== null && 
+				this.focusedElementState.selectionEnd !== null) {
+				element.setSelectionRange(
+					this.focusedElementState.selectionStart, 
+					this.focusedElementState.selectionEnd
+				);
+			}
+		} catch (error) {
+			// Silently fail if restoration is not possible
+		}
+	}
+
+	/**
+	 * Setup focus monitoring for input elements
+	 */
+	private setupFocusMonitoring(element: HTMLElement): void {
+		element.addEventListener('focus', () => {
+			this.activeInputElement = element;
+		});
+		
+		element.addEventListener('blur', () => {
+			if (this.activeInputElement === element) {
+				this.activeInputElement = null;
+				// Trigger deferred update when focus is lost
+				setTimeout(() => {
+					if (!this.hasActiveInput()) {
+						this.updateBlockSource();
+					}
+				}, 100);
+			}
+		});
+	}
+
+	/**
 	 * Debounced version of updateBlockSource for frequent input changes
 	 */
 	private debouncedUpdateBlockSource(): void {
 		if (this.sourceUpdateTimeout) {
 			clearTimeout(this.sourceUpdateTimeout);
 		}
+		
 		this.sourceUpdateTimeout = setTimeout(() => {
+			// Check if there's an active input - if so, defer the update
+			if (this.hasActiveInput()) {
+				// Retry after a shorter delay
+				this.sourceUpdateTimeout = setTimeout(() => {
+					if (!this.hasActiveInput()) {
+						this.updateBlockSource();
+					}
+				}, 500);
+				return;
+			}
+			
 			this.updateBlockSource();
-		}, 300);
+		}, 1000); // Increased from 300ms to 1000ms
 	}
 
 	/**
@@ -2051,6 +2199,9 @@ export class BufferCalcUI {
 		if (!this.isEditableMode()) {
 			return;
 		}
+
+		// Save current focus state before updating
+		this.saveFocusedElementState();
 
 		this.isUpdatingSource = true;
 
@@ -2113,6 +2264,8 @@ export class BufferCalcUI {
 			// Reset the update flag after a short delay to prevent immediate re-triggering
 			setTimeout(() => {
 				this.isUpdatingSource = false;
+				// Restore focus state after update is complete
+				this.restoreFocusedElementState();
 			}, 100);
 		}
 	}
