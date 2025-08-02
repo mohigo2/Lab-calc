@@ -43,9 +43,14 @@ export class BufferCalcUI {
 	private focusedElementState: {
 		element: HTMLElement | null;
 		value: string;
+		selectedIndex: number | null;
 		selectionStart: number | null;
 		selectionEnd: number | null;
-	} = { element: null, value: '', selectionStart: null, selectionEnd: null };
+	} = { element: null, value: '', selectedIndex: null, selectionStart: null, selectionEnd: null };
+	
+	// Autocomplete selection state management
+	private isAutocompleteSelecting: boolean = false;
+	private autocompleteTimeout: NodeJS.Timeout | null = null;
 
 	constructor(
 		container: HTMLElement,
@@ -139,6 +144,7 @@ export class BufferCalcUI {
 		
 		const volumeUnitSelect = volumeContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit || this.settings.defaultVolumeUnit);
+		this.setupFocusMonitoring(volumeUnitSelect);
 
 		volumeInput.addEventListener('input', () => {
 			this.updateCalculation();
@@ -147,7 +153,7 @@ export class BufferCalcUI {
 		this.setupFocusMonitoring(volumeInput);
 		volumeUnitSelect.addEventListener('change', () => {
 			this.updateCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Components section
@@ -258,6 +264,7 @@ export class BufferCalcUI {
 		
 		const stockUnitSelect = stockContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateConcentrationUnits(stockUnitSelect, component.stockUnit);
+		this.setupFocusMonitoring(stockUnitSelect);
 
 		stockInput.addEventListener('input', () => {
 			component.stockConc = parseFloat(stockInput.value) || 0;
@@ -269,7 +276,7 @@ export class BufferCalcUI {
 		stockUnitSelect.addEventListener('change', () => {
 			component.stockUnit = stockUnitSelect.value as ConcentrationUnit;
 			this.updateCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Final concentration
@@ -284,6 +291,7 @@ export class BufferCalcUI {
 		
 		const finalUnitSelect = finalContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateConcentrationUnits(finalUnitSelect, component.finalUnit);
+		this.setupFocusMonitoring(finalUnitSelect);
 
 		finalInput.addEventListener('input', () => {
 			component.finalConc = parseFloat(finalInput.value) || 0;
@@ -295,7 +303,7 @@ export class BufferCalcUI {
 		finalUnitSelect.addEventListener('change', () => {
 			component.finalUnit = finalUnitSelect.value as ConcentrationUnit;
 			this.updateCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Lot number (optional)
@@ -324,6 +332,11 @@ export class BufferCalcUI {
 		let debounceTimer: NodeJS.Timeout;
 
 		input.addEventListener('input', () => {
+			// Skip autocomplete during programmatic selection
+			if (this.isAutocompleteSelecting) {
+				return;
+			}
+			
 			clearTimeout(debounceTimer);
 			debounceTimer = setTimeout(() => {
 				const query = input.value.trim();
@@ -350,8 +363,25 @@ export class BufferCalcUI {
 					});
 
 					suggestionEl.addEventListener('click', () => {
+						// Set flag to prevent source update conflicts
+						this.isAutocompleteSelecting = true;
+						
+						// Clear any existing timeout
+						if (this.autocompleteTimeout) {
+							clearTimeout(this.autocompleteTimeout);
+						}
+						
+						// Execute selection callback
 						onSelect(reagent);
+						
+						// Hide suggestions immediately
 						container.style.display = 'none';
+						
+						// Reset flag and trigger single source update after a delay
+						this.autocompleteTimeout = setTimeout(() => {
+							this.isAutocompleteSelecting = false;
+							this.updateBlockSource();
+						}, 100);
 					});
 				});
 			}, 150); // Reduced from 300ms to 150ms for better responsiveness
@@ -664,6 +694,7 @@ export class BufferCalcUI {
 
 		const concUnitSelect = concContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateConcentrationUnits(concUnitSelect, data.concentrationUnit);
+		this.setupFocusMonitoring(concUnitSelect);
 
 		concInput.addEventListener('input', () => {
 			data.targetConcentration = parseFloat(concInput.value) || 0;
@@ -675,7 +706,7 @@ export class BufferCalcUI {
 		concUnitSelect.addEventListener('change', () => {
 			data.concentrationUnit = concUnitSelect.value as ConcentrationUnit;
 			this.updateStockCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Volume input
@@ -690,6 +721,7 @@ export class BufferCalcUI {
 
 		const volumeUnitSelect = volumeContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit);
+		this.setupFocusMonitoring(volumeUnitSelect);
 
 		volumeInput.addEventListener('input', () => {
 			data.volume = parseFloat(volumeInput.value) || 0;
@@ -701,7 +733,7 @@ export class BufferCalcUI {
 		volumeUnitSelect.addEventListener('change', () => {
 			data.volumeUnit = volumeUnitSelect.value as VolumeUnit;
 			this.updateStockCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Purity input (optional)
@@ -791,6 +823,7 @@ export class BufferCalcUI {
 
 		const stockConcUnitSelect = stockConcContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateConcentrationUnits(stockConcUnitSelect, data.stockConcentrationUnit);
+		this.setupFocusMonitoring(stockConcUnitSelect);
 
 		stockConcInput.addEventListener('input', () => {
 			data.stockConcentration = parseFloat(stockConcInput.value) || 0;
@@ -802,7 +835,7 @@ export class BufferCalcUI {
 		stockConcUnitSelect.addEventListener('change', () => {
 			data.stockConcentrationUnit = stockConcUnitSelect.value as ConcentrationUnit;
 			this.updateDilutionCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Final concentration
@@ -817,6 +850,7 @@ export class BufferCalcUI {
 
 		const finalConcUnitSelect = finalConcContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateConcentrationUnits(finalConcUnitSelect, data.finalConcentrationUnit);
+		this.setupFocusMonitoring(finalConcUnitSelect);
 
 		finalConcInput.addEventListener('input', () => {
 			data.finalConcentration = parseFloat(finalConcInput.value) || 0;
@@ -828,7 +862,7 @@ export class BufferCalcUI {
 		finalConcUnitSelect.addEventListener('change', () => {
 			data.finalConcentrationUnit = finalConcUnitSelect.value as ConcentrationUnit;
 			this.updateDilutionCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Final volume
@@ -843,6 +877,7 @@ export class BufferCalcUI {
 
 		const finalVolumeUnitSelect = finalVolumeContainer.createEl('select', { cls: 'buffer-calc-unit-select' });
 		this.populateVolumeUnits(finalVolumeUnitSelect, data.volumeUnit);
+		this.setupFocusMonitoring(finalVolumeUnitSelect);
 
 		finalVolumeInput.addEventListener('input', () => {
 			data.finalVolume = parseFloat(finalVolumeInput.value) || 0;
@@ -854,7 +889,7 @@ export class BufferCalcUI {
 		finalVolumeUnitSelect.addEventListener('change', () => {
 			data.volumeUnit = finalVolumeUnitSelect.value as VolumeUnit;
 			this.updateDilutionCalculation();
-			this.updateBlockSource();
+			this.debouncedUpdateBlockSource();
 		});
 
 		// Dilution factor (calculated and displayed)
@@ -2098,43 +2133,90 @@ export class BufferCalcUI {
 	 * Save the current focused element state
 	 */
 	private saveFocusedElementState(): void {
-		const activeElement = document.activeElement as HTMLInputElement;
+		const activeElement = document.activeElement as HTMLInputElement | HTMLSelectElement;
 		if (!activeElement || !this.container.contains(activeElement)) {
-			this.focusedElementState = { element: null, value: '', selectionStart: null, selectionEnd: null };
+			this.focusedElementState = { element: null, value: '', selectedIndex: null, selectionStart: null, selectionEnd: null };
 			return;
 		}
 		
-		this.focusedElementState = {
-			element: activeElement,
-			value: activeElement.value || '',
-			selectionStart: activeElement.selectionStart,
-			selectionEnd: activeElement.selectionEnd
-		};
+		const tagName = activeElement.tagName.toLowerCase();
+		
+		if (tagName === 'select') {
+			const selectElement = activeElement as HTMLSelectElement;
+			this.focusedElementState = {
+				element: activeElement,
+				value: selectElement.value || '',
+				selectedIndex: selectElement.selectedIndex,
+				selectionStart: null,
+				selectionEnd: null
+			};
+		} else {
+			const inputElement = activeElement as HTMLInputElement;
+			this.focusedElementState = {
+				element: activeElement,
+				value: inputElement.value || '',
+				selectedIndex: null,
+				selectionStart: inputElement.selectionStart,
+				selectionEnd: inputElement.selectionEnd
+			};
+		}
 	}
 
 	/**
 	 * Restore the previously focused element state
 	 */
 	private restoreFocusedElementState(): void {
+		// Skip restoration if autocomplete selection is in progress
+		if (this.isAutocompleteSelecting) {
+			return;
+		}
+		
 		if (!this.focusedElementState.element) return;
 		
 		try {
-			const element = this.focusedElementState.element as HTMLInputElement;
+			const element = this.focusedElementState.element;
 			// Check if element still exists in DOM
 			if (!document.body.contains(element)) return;
 			
 			element.focus();
-			if (element.value !== this.focusedElementState.value) {
-				element.value = this.focusedElementState.value;
-			}
 			
-			// Restore cursor position
-			if (this.focusedElementState.selectionStart !== null && 
-				this.focusedElementState.selectionEnd !== null) {
-				element.setSelectionRange(
-					this.focusedElementState.selectionStart, 
-					this.focusedElementState.selectionEnd
-				);
+			const tagName = element.tagName.toLowerCase();
+			
+			if (tagName === 'select') {
+				const selectElement = element as HTMLSelectElement;
+				
+				// Restore selected option
+				if (this.focusedElementState.selectedIndex !== null) {
+					selectElement.selectedIndex = this.focusedElementState.selectedIndex;
+				} else if (this.focusedElementState.value) {
+					selectElement.value = this.focusedElementState.value;
+				}
+			} else {
+				const inputElement = element as HTMLInputElement;
+				
+				// Only restore value if it hasn't been changed by autocomplete or user input
+				// Compare with current value to detect if it was programmatically changed
+				const currentValue = inputElement.value || '';
+				const savedValue = this.focusedElementState.value || '';
+				
+				// Don't restore if the value has significantly changed (likely autocomplete selection)
+				if (currentValue !== savedValue && currentValue.length > savedValue.length) {
+					// Value was likely updated by autocomplete, don't restore
+					return;
+				}
+				
+				if (inputElement.value !== this.focusedElementState.value) {
+					inputElement.value = this.focusedElementState.value;
+				}
+				
+				// Restore cursor position
+				if (this.focusedElementState.selectionStart !== null && 
+					this.focusedElementState.selectionEnd !== null) {
+					inputElement.setSelectionRange(
+						this.focusedElementState.selectionStart, 
+						this.focusedElementState.selectionEnd
+					);
+				}
 			}
 		} catch (error) {
 			// Silently fail if restoration is not possible
@@ -2166,16 +2248,21 @@ export class BufferCalcUI {
 	 * Debounced version of updateBlockSource for frequent input changes
 	 */
 	private debouncedUpdateBlockSource(): void {
+		// Skip source update if autocomplete selection is in progress
+		if (this.isAutocompleteSelecting) {
+			return;
+		}
+		
 		if (this.sourceUpdateTimeout) {
 			clearTimeout(this.sourceUpdateTimeout);
 		}
 		
 		this.sourceUpdateTimeout = setTimeout(() => {
 			// Check if there's an active input - if so, defer the update
-			if (this.hasActiveInput()) {
+			if (this.hasActiveInput() || this.isAutocompleteSelecting) {
 				// Retry after a shorter delay
 				this.sourceUpdateTimeout = setTimeout(() => {
-					if (!this.hasActiveInput()) {
+					if (!this.hasActiveInput() && !this.isAutocompleteSelecting) {
 						this.updateBlockSource();
 					}
 				}, 500);

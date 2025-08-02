@@ -4816,7 +4816,10 @@ var BufferCalcUI = class {
     this.sourceUpdateTimeout = null;
     // Focus monitoring for preventing updates during input
     this.activeInputElement = null;
-    this.focusedElementState = { element: null, value: "", selectionStart: null, selectionEnd: null };
+    this.focusedElementState = { element: null, value: "", selectedIndex: null, selectionStart: null, selectionEnd: null };
+    // Autocomplete selection state management
+    this.isAutocompleteSelecting = false;
+    this.autocompleteTimeout = null;
     this.container = container;
     this.blockContent = blockContent;
     this.calculationEngine = calculationEngine;
@@ -4882,6 +4885,7 @@ var BufferCalcUI = class {
     });
     const volumeUnitSelect = volumeContainer.createEl("select", { cls: "buffer-calc-unit-select" });
     this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit || this.settings.defaultVolumeUnit);
+    this.setupFocusMonitoring(volumeUnitSelect);
     volumeInput.addEventListener("input", () => {
       this.updateCalculation();
       this.debouncedUpdateBlockSource();
@@ -4889,7 +4893,7 @@ var BufferCalcUI = class {
     this.setupFocusMonitoring(volumeInput);
     volumeUnitSelect.addEventListener("change", () => {
       this.updateCalculation();
-      this.updateBlockSource();
+      this.debouncedUpdateBlockSource();
     });
     const componentsContainer = this.container.createEl("div", { cls: "buffer-calc-components" });
     componentsContainer.createEl("h4", { text: "\u6210\u5206" });
@@ -4968,6 +4972,7 @@ var BufferCalcUI = class {
     });
     const stockUnitSelect = stockContainer.createEl("select", { cls: "buffer-calc-unit-select" });
     this.populateConcentrationUnits(stockUnitSelect, component.stockUnit);
+    this.setupFocusMonitoring(stockUnitSelect);
     stockInput.addEventListener("input", () => {
       component.stockConc = parseFloat(stockInput.value) || 0;
       this.updateCalculation();
@@ -4977,7 +4982,7 @@ var BufferCalcUI = class {
     stockUnitSelect.addEventListener("change", () => {
       component.stockUnit = stockUnitSelect.value;
       this.updateCalculation();
-      this.updateBlockSource();
+      this.debouncedUpdateBlockSource();
     });
     const finalContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
     finalContainer.createEl("label", { text: "\u6700\u7D42\u6FC3\u5EA6:" });
@@ -4988,6 +4993,7 @@ var BufferCalcUI = class {
     });
     const finalUnitSelect = finalContainer.createEl("select", { cls: "buffer-calc-unit-select" });
     this.populateConcentrationUnits(finalUnitSelect, component.finalUnit);
+    this.setupFocusMonitoring(finalUnitSelect);
     finalInput.addEventListener("input", () => {
       component.finalConc = parseFloat(finalInput.value) || 0;
       this.updateCalculation();
@@ -4997,7 +5003,7 @@ var BufferCalcUI = class {
     finalUnitSelect.addEventListener("change", () => {
       component.finalUnit = finalUnitSelect.value;
       this.updateCalculation();
-      this.updateBlockSource();
+      this.debouncedUpdateBlockSource();
     });
     const lotContainer = componentEl.createEl("div", { cls: "buffer-calc-input-group" });
     lotContainer.createEl("label", { text: "\u30ED\u30C3\u30C8\u756A\u53F7\uFF08\u4EFB\u610F\uFF09:" });
@@ -5016,6 +5022,9 @@ var BufferCalcUI = class {
   setupReagentAutocomplete(input, container, onSelect) {
     let debounceTimer;
     input.addEventListener("input", () => {
+      if (this.isAutocompleteSelecting) {
+        return;
+      }
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
         const query = input.value.trim();
@@ -5036,8 +5045,16 @@ var BufferCalcUI = class {
             text: `${reagent.name} (MW: ${reagent.molecularWeight})`
           });
           suggestionEl.addEventListener("click", () => {
+            this.isAutocompleteSelecting = true;
+            if (this.autocompleteTimeout) {
+              clearTimeout(this.autocompleteTimeout);
+            }
             onSelect(reagent);
             container.style.display = "none";
+            this.autocompleteTimeout = setTimeout(() => {
+              this.isAutocompleteSelecting = false;
+              this.updateBlockSource();
+            }, 100);
           });
         });
       }, 150);
@@ -5277,6 +5294,7 @@ var BufferCalcUI = class {
       });
       const concUnitSelect = concContainer.createEl("select", { cls: "buffer-calc-unit-select" });
       this.populateConcentrationUnits(concUnitSelect, data.concentrationUnit);
+      this.setupFocusMonitoring(concUnitSelect);
       concInput.addEventListener("input", () => {
         data.targetConcentration = parseFloat(concInput.value) || 0;
         this.updateStockCalculation();
@@ -5286,7 +5304,7 @@ var BufferCalcUI = class {
       concUnitSelect.addEventListener("change", () => {
         data.concentrationUnit = concUnitSelect.value;
         this.updateStockCalculation();
-        this.updateBlockSource();
+        this.debouncedUpdateBlockSource();
       });
       const volumeContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       volumeContainer.createEl("label", { text: "\u4F53\u7A4D:" });
@@ -5297,6 +5315,7 @@ var BufferCalcUI = class {
       });
       const volumeUnitSelect = volumeContainer.createEl("select", { cls: "buffer-calc-unit-select" });
       this.populateVolumeUnits(volumeUnitSelect, data.volumeUnit);
+      this.setupFocusMonitoring(volumeUnitSelect);
       volumeInput.addEventListener("input", () => {
         data.volume = parseFloat(volumeInput.value) || 0;
         this.updateStockCalculation();
@@ -5306,7 +5325,7 @@ var BufferCalcUI = class {
       volumeUnitSelect.addEventListener("change", () => {
         data.volumeUnit = volumeUnitSelect.value;
         this.updateStockCalculation();
-        this.updateBlockSource();
+        this.debouncedUpdateBlockSource();
       });
       const purityContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       purityContainer.createEl("label", { text: "\u7D14\u5EA6 (%, \u4EFB\u610F):" });
@@ -5371,6 +5390,7 @@ var BufferCalcUI = class {
       });
       const stockConcUnitSelect = stockConcContainer.createEl("select", { cls: "buffer-calc-unit-select" });
       this.populateConcentrationUnits(stockConcUnitSelect, data.stockConcentrationUnit);
+      this.setupFocusMonitoring(stockConcUnitSelect);
       stockConcInput.addEventListener("input", () => {
         data.stockConcentration = parseFloat(stockConcInput.value) || 0;
         this.updateDilutionCalculation();
@@ -5380,7 +5400,7 @@ var BufferCalcUI = class {
       stockConcUnitSelect.addEventListener("change", () => {
         data.stockConcentrationUnit = stockConcUnitSelect.value;
         this.updateDilutionCalculation();
-        this.updateBlockSource();
+        this.debouncedUpdateBlockSource();
       });
       const finalConcContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       finalConcContainer.createEl("label", { text: "\u6700\u7D42\u6FC3\u5EA6:" });
@@ -5391,6 +5411,7 @@ var BufferCalcUI = class {
       });
       const finalConcUnitSelect = finalConcContainer.createEl("select", { cls: "buffer-calc-unit-select" });
       this.populateConcentrationUnits(finalConcUnitSelect, data.finalConcentrationUnit);
+      this.setupFocusMonitoring(finalConcUnitSelect);
       finalConcInput.addEventListener("input", () => {
         data.finalConcentration = parseFloat(finalConcInput.value) || 0;
         this.updateDilutionCalculation();
@@ -5400,7 +5421,7 @@ var BufferCalcUI = class {
       finalConcUnitSelect.addEventListener("change", () => {
         data.finalConcentrationUnit = finalConcUnitSelect.value;
         this.updateDilutionCalculation();
-        this.updateBlockSource();
+        this.debouncedUpdateBlockSource();
       });
       const finalVolumeContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       finalVolumeContainer.createEl("label", { text: "\u6700\u7D42\u4F53\u7A4D:" });
@@ -5411,6 +5432,7 @@ var BufferCalcUI = class {
       });
       const finalVolumeUnitSelect = finalVolumeContainer.createEl("select", { cls: "buffer-calc-unit-select" });
       this.populateVolumeUnits(finalVolumeUnitSelect, data.volumeUnit);
+      this.setupFocusMonitoring(finalVolumeUnitSelect);
       finalVolumeInput.addEventListener("input", () => {
         data.finalVolume = parseFloat(finalVolumeInput.value) || 0;
         this.updateDilutionCalculation();
@@ -5420,7 +5442,7 @@ var BufferCalcUI = class {
       finalVolumeUnitSelect.addEventListener("change", () => {
         data.volumeUnit = finalVolumeUnitSelect.value;
         this.updateDilutionCalculation();
-        this.updateBlockSource();
+        this.debouncedUpdateBlockSource();
       });
       const dilutionFactorContainer = controls.createEl("div", { cls: "buffer-calc-input-group" });
       dilutionFactorContainer.createEl("label", { text: "\u5E0C\u91C8\u500D\u7387 (\u81EA\u52D5\u8A08\u7B97):" });
@@ -6366,20 +6388,37 @@ var BufferCalcUI = class {
   saveFocusedElementState() {
     const activeElement = document.activeElement;
     if (!activeElement || !this.container.contains(activeElement)) {
-      this.focusedElementState = { element: null, value: "", selectionStart: null, selectionEnd: null };
+      this.focusedElementState = { element: null, value: "", selectedIndex: null, selectionStart: null, selectionEnd: null };
       return;
     }
-    this.focusedElementState = {
-      element: activeElement,
-      value: activeElement.value || "",
-      selectionStart: activeElement.selectionStart,
-      selectionEnd: activeElement.selectionEnd
-    };
+    const tagName = activeElement.tagName.toLowerCase();
+    if (tagName === "select") {
+      const selectElement = activeElement;
+      this.focusedElementState = {
+        element: activeElement,
+        value: selectElement.value || "",
+        selectedIndex: selectElement.selectedIndex,
+        selectionStart: null,
+        selectionEnd: null
+      };
+    } else {
+      const inputElement = activeElement;
+      this.focusedElementState = {
+        element: activeElement,
+        value: inputElement.value || "",
+        selectedIndex: null,
+        selectionStart: inputElement.selectionStart,
+        selectionEnd: inputElement.selectionEnd
+      };
+    }
   }
   /**
    * Restore the previously focused element state
    */
   restoreFocusedElementState() {
+    if (this.isAutocompleteSelecting) {
+      return;
+    }
     if (!this.focusedElementState.element)
       return;
     try {
@@ -6387,14 +6426,30 @@ var BufferCalcUI = class {
       if (!document.body.contains(element))
         return;
       element.focus();
-      if (element.value !== this.focusedElementState.value) {
-        element.value = this.focusedElementState.value;
-      }
-      if (this.focusedElementState.selectionStart !== null && this.focusedElementState.selectionEnd !== null) {
-        element.setSelectionRange(
-          this.focusedElementState.selectionStart,
-          this.focusedElementState.selectionEnd
-        );
+      const tagName = element.tagName.toLowerCase();
+      if (tagName === "select") {
+        const selectElement = element;
+        if (this.focusedElementState.selectedIndex !== null) {
+          selectElement.selectedIndex = this.focusedElementState.selectedIndex;
+        } else if (this.focusedElementState.value) {
+          selectElement.value = this.focusedElementState.value;
+        }
+      } else {
+        const inputElement = element;
+        const currentValue = inputElement.value || "";
+        const savedValue = this.focusedElementState.value || "";
+        if (currentValue !== savedValue && currentValue.length > savedValue.length) {
+          return;
+        }
+        if (inputElement.value !== this.focusedElementState.value) {
+          inputElement.value = this.focusedElementState.value;
+        }
+        if (this.focusedElementState.selectionStart !== null && this.focusedElementState.selectionEnd !== null) {
+          inputElement.setSelectionRange(
+            this.focusedElementState.selectionStart,
+            this.focusedElementState.selectionEnd
+          );
+        }
       }
     } catch (error) {
     }
@@ -6421,13 +6476,16 @@ var BufferCalcUI = class {
    * Debounced version of updateBlockSource for frequent input changes
    */
   debouncedUpdateBlockSource() {
+    if (this.isAutocompleteSelecting) {
+      return;
+    }
     if (this.sourceUpdateTimeout) {
       clearTimeout(this.sourceUpdateTimeout);
     }
     this.sourceUpdateTimeout = setTimeout(() => {
-      if (this.hasActiveInput()) {
+      if (this.hasActiveInput() || this.isAutocompleteSelecting) {
         this.sourceUpdateTimeout = setTimeout(() => {
-          if (!this.hasActiveInput()) {
+          if (!this.hasActiveInput() && !this.isAutocompleteSelecting) {
             this.updateBlockSource();
           }
         }, 500);
